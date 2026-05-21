@@ -158,6 +158,41 @@ Sampling and destination are configured at the Composition Root.
 - Multi-tenant accounts. The app is a single-user product; account
   sharing is not modelled.
 
+## Future direction
+
+The current scope ships a single Conversation as the user-facing
+surface. That is a deliberate MVP boundary, not the ceiling of what the
+architecture can carry.
+
+The fractal layered layout is designed so the app can grow into a
+multi-surface workbench without rewriting existing features. A future
+revision could host peer surfaces alongside the Conversation — for
+example, long-form authoring, structured output rendering, or
+sandboxed code-style transcripts — by adding feature modules under
+`OpenSpace/OpenSpace/Features/` with the same four-layer split, and by
+adding sub-feature folders under any existing feature when a surface
+naturally lives inside another (for example a richer Home shell that
+hosts more than one peer surface).
+
+Three properties keep that door open today:
+
+- **Provider Client is surface-agnostic.** Any new surface that needs
+  model output consumes the same streaming Client; Providers do not
+  need to know which surface invoked them.
+- **Capabilities are declared, not surface-bound.** A Capability is
+  invoked by the Assistant regardless of which surface initiated the
+  Turn, so adding a surface does not require redesigning the
+  Capability protocol.
+- **Each feature owns its own state machine.** TCA scoping means a new
+  feature module composes into the App root without touching the
+  reducers of features that are already shipping.
+
+None of this is committed work. It is the rationale for treating Home
+(and, in time, any other shell feature) as an isolatable module rather
+than collapsing the Conversation into the App root. When the project
+decides to expand beyond a single surface, that decision will land as
+an ADR and a roadmap phase, not as an architecture rewrite.
+
 ## Where to next
 
 - Decisions that landed: [`docs/adr/README.md`](adr/README.md).
