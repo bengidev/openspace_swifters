@@ -5,8 +5,8 @@
 //  Created by Bambang Tri Rahmat Doni on 21/05/26.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct OpenSpaceApp: App {
