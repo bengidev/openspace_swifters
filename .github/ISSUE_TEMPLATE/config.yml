@@ -1,0 +1,7 @@
+# GitHub Issue chooser configuration.
+#
+# Disabling the blank-issue option ensures every new issue lands
+# through one of the two templates (Feature / PRD or Bug report) so
+# the body shape stays predictable for both human reviewers and AI
+# coding agents.
+blank_issues_enabled: false
