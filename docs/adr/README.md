@@ -98,3 +98,7 @@ without changing meaning) are fine.
 | 0023 | [Errors: flat ProviderError enum, no auto retry, inline plus modal alert for critical](0023-errors-flat-provider-error-no-auto-retry.md) | Accepted |
 | 0024 | [Context window management: compose-time modal Truncate / New Conversation / Cancel; per-vendor tokenizer](0024-context-window-management-compose-modal.md) | Accepted |
 | 0025 | [Conversation list: search plus pin (max 5) plus archive plus folder plus tag (max 10); compound AND filter](0025-conversation-list-search-pin-archive-folder-tag.md) | Accepted |
+| 0026 | [Telemetry scope: tiered opt-in (in-memory, optional persist, optional remote)](0026-telemetry-scope-tiered-opt-in.md) | Accepted |
+| 0027 | [Telemetry destination: generic webhook, HTTPS-only, fire-and-forget](0027-telemetry-destination-generic-webhook.md) | Accepted |
+| 0028 | [Markdown rendering: third-party renderer with limited scope and 100 ms throttle](0028-markdown-rendering-third-party-limited-scope.md) | Accepted |
+| 0029 | [HTTP/SSE: URLSession AsyncBytes plus internal SSEParser; no reconnect/heartbeat/resume in v1](0029-http-sse-urlsession-asyncbytes-internal-parser.md) | Accepted |
