@@ -22,6 +22,28 @@ conventions, PRD body shape) is documented in
 [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md) and
 [`docs/agents/triage-labels.md`](docs/agents/triage-labels.md).
 
+## Filing issues and PRs
+
+GitHub provides templates that pre-fill the structure this project
+expects. Use them rather than starting from a blank body.
+
+- **Issues** —
+  [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) hosts the bug
+  report, feature request, and PRD templates. The picker appears when
+  you click _New issue_ on GitHub; pick the template that matches the
+  report.
+- **Pull requests** —
+  [`.github/pull_request_template.md`](.github/pull_request_template.md)
+  is applied to every new PR. Fill every section before requesting
+  review.
+
+When a commit, PR, or issue references a tracked issue, link them with
+the trailer convention documented under
+[Trailers link commits to issues](#trailers-link-commits-to-issues):
+
+- `Refs: #<N>` — work that relates to issue N without closing it.
+- `Closes: #<N>` — work that resolves issue N when it merges.
+
 ## Branching
 
 - The default branch is `master`.
@@ -72,6 +94,31 @@ types are:
 Subject line: imperative, no trailing period, ≤ 72 characters. Optional
 scope in parentheses: `feat(onboarding): gate flow on ProgressEntity`.
 
+### Adding a dependency
+
+Adding, upgrading, or removing a third-party package is a single
+atomic change that updates both the package manifest and the
+disclosure file. Skipping the disclosure step is a policy violation,
+not a follow-up task.
+
+Checklist for any dependency change:
+
+- [ ] Update the package manifest (Swift Package Manager via Xcode, or
+      a future `Package.swift`) with an exact version or a locked
+      range. Avoid open-ended ranges.
+- [ ] Update [`THIRD_PARTY.md`](THIRD_PARTY.md) in the **same commit**
+      using the entry template documented at the top of that file.
+      Keep entries sorted alphabetically by `Name`.
+- [ ] Confirm the upstream license is compatible with this project and
+      record its SPDX identifier in the entry.
+- [ ] Note any new transitive dependencies the change pulls in, if
+      they are visible from the manifest resolution.
+- [ ] On version upgrades, mention the bump in `CHANGELOG.md` under
+      the relevant release.
+
+A pull request that touches the package manifest without a matching
+`THIRD_PARTY.md` update will be sent back for revision.
+
 ### Trailers link commits to issues
 
 When a commit references a tracked issue, add one of the following
@@ -116,6 +163,45 @@ For changes that touch app code:
 - The change does not introduce new compiler warnings.
 
 For docs-only changes, verify cross-links resolve.
+
+## Branch protection
+
+The default branch (`master`) is protected. The maintainer applies the
+ruleset through the GitHub UI; this section documents the configuration
+so a fresh maintainer, a fork, or a recovered repository can re-apply
+the same rules without guessing.
+
+The ruleset on `master` requires:
+
+- **Pull request before merging** — direct pushes to `master` are
+  rejected. All changes land through a PR.
+- **Required status checks** — the following CI jobs from
+  [`.github/workflows/ci.yml`](.github/workflows/ci.yml) must report
+  success on the PR's head commit before the merge button enables:
+  - `build`
+  - `test`
+  - `lint`
+- **Strict required checks** — branches must be up to date with
+  `master` before merging, so the required jobs run against the
+  post-merge tree.
+- **Linear history** — merges use squash or rebase. No merge commits
+  on `master`.
+- **Block force pushes** — `git push --force` to `master` is rejected.
+- **Block deletions** — `master` cannot be deleted through the API or
+  UI.
+
+To re-apply through the GitHub UI:
+
+1. Open _Settings → Rules → Rulesets_ on `bengidev/openspace_swifters`.
+2. Create a ruleset targeting `Default branch`.
+3. Enable _Require a pull request before merging_, _Require status
+   checks to pass_ (selecting `build`, `test`, `lint` and checking
+   _Require branches to be up to date_), _Require linear history_,
+   _Block force pushes_, and _Restrict deletions_.
+4. Set _Enforcement_ to _Active_ and save.
+
+Changes to required-job names in the CI workflow must update this list
+in the same PR so the documented ruleset stays applicable.
 
 ## Project policies
 
