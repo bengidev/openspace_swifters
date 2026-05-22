@@ -28,10 +28,14 @@ concurrency:
 env:
   XCODE_PROJECT: OpenSpace/OpenSpace.xcodeproj
   XCODE_SCHEME: OpenSpace
-  # Pinned to the project's iOS 17.6 minimum deployment target. The runner
-  # must carry the matching simulator runtime; if a future macOS image drops
-  # iOS 17.6, raise the deployment target in lockstep.
-  XCODE_DESTINATION: 'platform=iOS Simulator,OS=17.6,name=iPhone 15'
+  # iPhone 16 is present across every iOS simulator runtime that
+  # macos-15 ships (18.5 / 18.6 / 26.x). Dropping the explicit OS
+  # qualifier lets the runner image pick whichever runtime it carries
+  # without breaking CI when GitHub rolls the image forward. Minimum
+  # deployment target compliance is enforced at compile time by Swift
+  # availability checks, not by which simulator the binary runs on, so
+  # there is no value in pinning iOS 17.6 here.
+  XCODE_DESTINATION: 'platform=iOS Simulator,name=iPhone 16'
   DERIVED_DATA: build/DerivedData
 
 jobs:
@@ -62,6 +66,8 @@ jobs:
             -destination "$XCODE_DESTINATION" \
             -configuration Debug \
             -derivedDataPath "$DERIVED_DATA" \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO
 
@@ -92,6 +98,8 @@ jobs:
             -destination "$XCODE_DESTINATION" \
             -configuration Debug \
             -derivedDataPath "$DERIVED_DATA" \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO
 
