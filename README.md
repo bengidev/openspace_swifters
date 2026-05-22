@@ -1,5 +1,16 @@
 # OpenSpace
 
+A native iOS AI assistant exploring The Composable Architecture, SwiftData, and
+multi-vendor BYOK as a single, testable composition.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![iOS 17.6+](https://img.shields.io/badge/iOS-17.6%2B-blue.svg)](https://developer.apple.com/ios/)
+[![Swift 5.0](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
+[![CI](https://github.com/bengidev/openspace_swifters/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/bengidev/openspace_swifters/actions/workflows/ci.yml)
+
+Created and maintained by [@bengidev](https://github.com/bengidev). Community
+contributors are credited via Git history and release notes.
+
 OpenSpace is an iOS app that puts an AI assistant in the user's pocket so they
 can get work done faster — drafting, summarising, planning, and acting on
 information through natural conversation.
@@ -99,6 +110,14 @@ For contributors:
 | Find behavioural expectations              | [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)          |
 | Track release-by-release changes           | [`CHANGELOG.md`](CHANGELOG.md)                      |
 | Operate as an AI coding agent in this repo | [`AGENTS.md`](AGENTS.md), [`docs/agents/`](docs/agents/) |
+
+## Translations
+
+OpenSpace ships with a String Catalog scaffold so user-facing copy can be
+translated without code changes. The catalog itself lands in a separate slice;
+once it is in place, contributors can add a locale by opening the catalog in
+Xcode, declaring the language, and translating the strings. Pull requests that
+add or improve translations are welcome and reviewed alongside code changes.
 
 ## License
 
