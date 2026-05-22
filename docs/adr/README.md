@@ -86,3 +86,8 @@ without changing meaning) are fine.
 | 0011 | [Model catalog: 3-tier (dynamic /models, curated fallback, free-form override)](0011-model-catalog-three-tier.md) | Accepted |
 | 0012 | [System prompt: ProviderConfig default plus Conversation snapshot override](0012-system-prompt-default-and-snapshot.md) | Accepted |
 | 0013 | [Inference parameters: common subset at ProviderConfig only](0013-inference-parameters-common-subset.md) | Accepted |
+| 0014 | [Multimodal v1 scope: text, image, PDF, audio with vendor-asymmetric capabilities](0014-multimodal-v1-scope.md) | Accepted |
+| 0015 | [Attachment storage: SwiftData external storage with SHA-256 hash field](0015-attachment-storage-external-with-hash.md) | Accepted |
+| 0016 | [Attachment encoding: per-vendor normalisation with PDFKit text extraction for OpenAI](0016-attachment-encoding-rules.md) | Accepted |
+| 0017 | [Persistence schema v1: 7 entities under VersionedSchema with orphan-snapshot ProviderConfig deletion](0017-persistence-schema-v1.md) | Accepted |
+| 0018 | [Tool-calling protocol v1: reserve event types only, no domain tool surface](0018-tool-calling-protocol-v1.md) | Accepted |
