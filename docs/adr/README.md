@@ -91,3 +91,10 @@ without changing meaning) are fine.
 | 0016 | [Attachment encoding: per-vendor normalisation with PDFKit text extraction for OpenAI](0016-attachment-encoding-rules.md) | Accepted |
 | 0017 | [Persistence schema v1: 7 entities under VersionedSchema with orphan-snapshot ProviderConfig deletion](0017-persistence-schema-v1.md) | Accepted |
 | 0018 | [Tool-calling protocol v1: reserve event types only, no domain tool surface](0018-tool-calling-protocol-v1.md) | Accepted |
+| 0019 | [Onboarding: welcome-only with OnboardingProgressEntity gate](0019-onboarding-welcome-only-with-progress-gate.md) | Accepted |
+| 0020 | [Settings module: monolithic Container with nested Flow reducers](0020-settings-module-monolithic-container-flow.md) | Accepted |
+| 0021 | [Cancellation semantics: Stop modal Keep/Discard; network drop equals .failed](0021-cancellation-semantics-stop-modal-network-failed.md) | Accepted |
+| 0022 | [Concurrency posture: Swift 6 language mode with complete strict concurrency](0022-concurrency-posture-swift-6-strict.md) | Accepted |
+| 0023 | [Errors: flat ProviderError enum, no auto retry, inline plus modal alert for critical](0023-errors-flat-provider-error-no-auto-retry.md) | Accepted |
+| 0024 | [Context window management: compose-time modal Truncate / New Conversation / Cancel; per-vendor tokenizer](0024-context-window-management-compose-modal.md) | Accepted |
+| 0025 | [Conversation list: search plus pin (max 5) plus archive plus folder plus tag (max 10); compound AND filter](0025-conversation-list-search-pin-archive-folder-tag.md) | Accepted |
