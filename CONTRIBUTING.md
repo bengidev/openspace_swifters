@@ -164,6 +164,45 @@ For changes that touch app code:
 
 For docs-only changes, verify cross-links resolve.
 
+## Branch protection
+
+The default branch (`master`) is protected. The maintainer applies the
+ruleset through the GitHub UI; this section documents the configuration
+so a fresh maintainer, a fork, or a recovered repository can re-apply
+the same rules without guessing.
+
+The ruleset on `master` requires:
+
+- **Pull request before merging** — direct pushes to `master` are
+  rejected. All changes land through a PR.
+- **Required status checks** — the following CI jobs from
+  [`.github/workflows/ci.yml`](.github/workflows/ci.yml) must report
+  success on the PR's head commit before the merge button enables:
+  - `build`
+  - `test`
+  - `lint`
+- **Strict required checks** — branches must be up to date with
+  `master` before merging, so the required jobs run against the
+  post-merge tree.
+- **Linear history** — merges use squash or rebase. No merge commits
+  on `master`.
+- **Block force pushes** — `git push --force` to `master` is rejected.
+- **Block deletions** — `master` cannot be deleted through the API or
+  UI.
+
+To re-apply through the GitHub UI:
+
+1. Open _Settings → Rules → Rulesets_ on `bengidev/openspace_swifters`.
+2. Create a ruleset targeting `Default branch`.
+3. Enable _Require a pull request before merging_, _Require status
+   checks to pass_ (selecting `build`, `test`, `lint` and checking
+   _Require branches to be up to date_), _Require linear history_,
+   _Block force pushes_, and _Restrict deletions_.
+4. Set _Enforcement_ to _Active_ and save.
+
+Changes to required-job names in the CI workflow must update this list
+in the same PR so the documented ruleset stays applicable.
+
 ## Project policies
 
 These are non-negotiable across human and AI contributions.
