@@ -22,6 +22,28 @@ conventions, PRD body shape) is documented in
 [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md) and
 [`docs/agents/triage-labels.md`](docs/agents/triage-labels.md).
 
+## Filing issues and PRs
+
+GitHub provides templates that pre-fill the structure this project
+expects. Use them rather than starting from a blank body.
+
+- **Issues** —
+  [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) hosts the bug
+  report, feature request, and PRD templates. The picker appears when
+  you click _New issue_ on GitHub; pick the template that matches the
+  report.
+- **Pull requests** —
+  [`.github/pull_request_template.md`](.github/pull_request_template.md)
+  is applied to every new PR. Fill every section before requesting
+  review.
+
+When a commit, PR, or issue references a tracked issue, link them with
+the trailer convention documented under
+[Trailers link commits to issues](#trailers-link-commits-to-issues):
+
+- `Refs: #<N>` — work that relates to issue N without closing it.
+- `Closes: #<N>` — work that resolves issue N when it merges.
+
 ## Branching
 
 - The default branch is `master`.
