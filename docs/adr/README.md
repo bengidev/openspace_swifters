@@ -78,3 +78,11 @@ without changing meaning) are fine.
 | 0003 | [Use SwiftData for on-device persistence](0003-swiftdata-for-on-device-persistence.md) | Accepted |
 | 0004 | [Target iOS 17.6 as the minimum deployment](0004-ios-17-6-minimum-deployment.md) | Accepted |
 | 0005 | [Use Swift Testing as the unit-testing framework](0005-swift-testing-as-unit-testing-framework.md) | Accepted |
+| 0006 | [Provider abstraction shape: one Client surface, N Live per vendor](0006-provider-abstraction-shape.md) | Accepted |
+| 0007 | [Vendor scope v1: OpenRouter, OpenAI BYOK, Anthropic BYOK; two dialects](0007-vendor-scope-v1.md) | Accepted |
+| 0008 | [Streaming protocol: event-shaped enum with reserved tool-call cases](0008-streaming-protocol.md) | Accepted |
+| 0009 | [Provider configuration: multi-config; pin per Conversation; no mid-conversation switching](0009-provider-configuration-multi-config.md) | Accepted |
+| 0010 | [Credentials: one Keychain entry per ProviderConfig UUID; cascade delete](0010-credentials-keychain-per-config.md) | Accepted |
+| 0011 | [Model catalog: 3-tier (dynamic /models, curated fallback, free-form override)](0011-model-catalog-three-tier.md) | Accepted |
+| 0012 | [System prompt: ProviderConfig default plus Conversation snapshot override](0012-system-prompt-default-and-snapshot.md) | Accepted |
+| 0013 | [Inference parameters: common subset at ProviderConfig only](0013-inference-parameters-common-subset.md) | Accepted |
