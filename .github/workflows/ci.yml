@@ -1,0 +1,116 @@
+# CI workflow for OpenSpace.
+#
+# Runs on every pull request and on push to the default branch. Three jobs:
+#   - build : xcodebuild build  against the OpenSpace scheme on an iOS 17.6
+#             simulator destination.
+#   - test  : xcodebuild test   against the same scheme and destination,
+#             surfacing Swift Testing results.
+#   - lint  : swiftlint against the repo's .swiftlint.yml, failing on any
+#             violation (--strict).
+#
+# Branch-protection rules that *require* these checks are configured via the
+# GitHub UI ruleset by a maintainer (see CONTRIBUTING.md). This workflow only
+# declares the jobs; making them mandatory is a separate, manual step.
+#
+# Tracked by issue #32 (P0: CI workflow — build, test, lint on PR and main).
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE_PROJECT: OpenSpace/OpenSpace.xcodeproj
+  XCODE_SCHEME: OpenSpace
+  # Pinned to the project's iOS 17.6 minimum deployment target. The runner
+  # must carry the matching simulator runtime; if a future macOS image drops
+  # iOS 17.6, raise the deployment target in lockstep.
+  XCODE_DESTINATION: 'platform=iOS Simulator,OS=17.6,name=iPhone 15'
+  DERIVED_DATA: build/DerivedData
+
+jobs:
+  build:
+    name: Build
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Swift Package Manager artefacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ${{ env.DERIVED_DATA }}/SourcePackages
+          key: spm-${{ runner.os }}-build-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            spm-${{ runner.os }}-build-
+            spm-${{ runner.os }}-
+
+      - name: xcodebuild build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -destination "$XCODE_DESTINATION" \
+            -configuration Debug \
+            -derivedDataPath "$DERIVED_DATA" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+  test:
+    name: Test
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Swift Package Manager artefacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ${{ env.DERIVED_DATA }}/SourcePackages
+          key: spm-${{ runner.os }}-test-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            spm-${{ runner.os }}-test-
+            spm-${{ runner.os }}-
+
+      - name: xcodebuild test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -destination "$XCODE_DESTINATION" \
+            -configuration Debug \
+            -derivedDataPath "$DERIVED_DATA" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+  lint:
+    name: Lint
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        # SwiftLint is preinstalled on macos-15 runners; keep an explicit
+        # `brew install` as a no-op safety net so a future image change does
+        # not silently turn the lint job into a "command not found" pass.
+        run: |
+          if ! command -v swiftlint >/dev/null 2>&1; then
+            brew install swiftlint
+          fi
+          swiftlint version
+
+      - name: swiftlint lint
+        run: swiftlint lint --strict --reporter github-actions-logging
