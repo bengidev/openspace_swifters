@@ -94,6 +94,31 @@ types are:
 Subject line: imperative, no trailing period, ≤ 72 characters. Optional
 scope in parentheses: `feat(onboarding): gate flow on ProgressEntity`.
 
+### Adding a dependency
+
+Adding, upgrading, or removing a third-party package is a single
+atomic change that updates both the package manifest and the
+disclosure file. Skipping the disclosure step is a policy violation,
+not a follow-up task.
+
+Checklist for any dependency change:
+
+- [ ] Update the package manifest (Swift Package Manager via Xcode, or
+      a future `Package.swift`) with an exact version or a locked
+      range. Avoid open-ended ranges.
+- [ ] Update [`THIRD_PARTY.md`](THIRD_PARTY.md) in the **same commit**
+      using the entry template documented at the top of that file.
+      Keep entries sorted alphabetically by `Name`.
+- [ ] Confirm the upstream license is compatible with this project and
+      record its SPDX identifier in the entry.
+- [ ] Note any new transitive dependencies the change pulls in, if
+      they are visible from the manifest resolution.
+- [ ] On version upgrades, mention the bump in `CHANGELOG.md` under
+      the relevant release.
+
+A pull request that touches the package manifest without a matching
+`THIRD_PARTY.md` update will be sent back for revision.
+
 ### Trailers link commits to issues
 
 When a commit references a tracked issue, add one of the following
