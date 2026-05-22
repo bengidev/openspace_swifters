@@ -1,0 +1,110 @@
+# SwiftLint configuration for OpenSpace.
+#
+# Goal: define the v1 style bar with explicit, macro-aware suppressions.
+# Every `disabled_rules` and `excluded` entry must carry a one-line comment
+# naming the macro, framework, or generated artefact that justifies it.
+# CI integration is tracked separately (see issue #32).
+#
+# Verified against SwiftLint 0.63.2 on macOS 26.5.
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+
+# Source roots SwiftLint walks. Limited to the Xcode project tree so the
+# linter does not chase docs, ADR markdown, or shell tooling.
+included:
+  - OpenSpace
+
+# Paths skipped during linting. Each entry names the artefact being skipped.
+excluded:
+  - .build                                 # Swift Package Manager build output (no source to lint).
+  - .swiftpm                               # SwiftPM workspace state and resolved package metadata.
+  - DerivedData                            # Xcode derived data when builds run inside the repo.
+  - OpenSpace/OpenSpace/Preview Content    # Xcode-generated SwiftUI preview asset bundle (no Swift source).
+
+# ---------------------------------------------------------------------------
+# Disabled rules
+# ---------------------------------------------------------------------------
+#
+# Disabled rules are opt-out only and must be justified. Rules not listed
+# here remain at SwiftLint's default severity.
+disabled_rules:
+  - trailing_comma           # SwiftData `Schema([Item.self,])` and TCA `Reduce { ... }` DSL idiomatically retain trailing commas across macro boundaries.
+  - todo                     # `// TODO:` / `// FIXME:` markers are tracked via GitHub Issues, not blocked at the linter.
+  - static_over_final_class  # XCTest's `XCUIApplication` launch tests require `override class var runsForEachTargetApplicationUIConfiguration: Bool` (see XCTest framework docs).
+
+# ---------------------------------------------------------------------------
+# Opt-in rules
+# ---------------------------------------------------------------------------
+#
+# Switched on to raise the v1 style bar. Each is safe against macro-generated
+# code because SwiftLint operates on the source the developer types, not the
+# macro expansion produced at compile time.
+opt_in_rules:
+  - empty_count
+  - explicit_init
+  - first_where
+  - last_where
+  - redundant_nil_coalescing
+  - sorted_imports
+  - unused_optional_binding
+
+# ---------------------------------------------------------------------------
+# Rule-specific tuning
+# ---------------------------------------------------------------------------
+
+# `Identifiable` conformance and idiomatic short parameter labels (`id`,
+# `to`, `at`) need a 2-character lower bound; `id` is also explicitly
+# allowed because SwiftData `@Model` types conform to `Identifiable`.
+identifier_name:
+  min_length:
+    warning: 2
+  excluded:
+    - id
+
+# Test source frequently carries long descriptive expressions and Swift
+# Testing's `#expect(...)` invocations; 120 columns is too tight for them.
+# Comments and URLs do not block lint either way.
+line_length:
+  warning: 140
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+# TCA `@Reducer` types nest `State` and `Action` enums and accumulate
+# reducer composition inside `body`. The default 250-line warning trips on
+# realistic feature reducers before they earn a refactor.
+type_body_length:
+  warning: 400
+  error: 600
+
+# Reducer `body` closures combine multiple `Reduce` blocks plus `.ifLet`
+# / `.forEach` chains. The default 40-line warning fires on routine flow
+# reducers.
+function_body_length:
+  warning: 80
+  error: 150
+
+# TCA pattern nests `Action` cases that themselves carry associated values
+# referencing nested types (e.g. `case alert(PresentationAction<Alert>)`).
+# Two levels of type nesting and two levels of function nesting are needed
+# to keep that pattern lint-clean.
+nesting:
+  type_level: 2
+  function_level: 2
+
+# Reducers commonly hit cyclomatic complexity in their `body` switch on
+# `Action`. Raise the default to allow exhaustive matches without
+# splitting reducers prematurely.
+cyclomatic_complexity:
+  warning: 15
+  error: 25
+
+# ---------------------------------------------------------------------------
+# Reporter
+# ---------------------------------------------------------------------------
+
+# Xcode-style output is the lowest common denominator: it surfaces inline
+# in Xcode build logs and is also readable in CI logs.
+reporter: "xcode"
