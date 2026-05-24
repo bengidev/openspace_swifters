@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		B6DA5B4D2FBF5F0D002D6B02 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = B6DA5B4C2FBF5F0D002D6B02 /* ComposableArchitecture */; };
+		B6DA5B4E2FBF6500002D6B02 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = B6DA5B4C2FBF5F0D002D6B02 /* ComposableArchitecture */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +65,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B6DA5B4E2FBF6500002D6B02 /* ComposableArchitecture in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -141,6 +143,7 @@
 			);
 			name = OpenSpaceTests;
 			packageProductDependencies = (
+				B6DA5B4C2FBF5F0D002D6B02 /* ComposableArchitecture */,
 			);
 			productName = OpenSpaceTests;
 			productReference = B6DA5B2E2FBF5E5F002D6B02 /* OpenSpaceTests.xctest */;
