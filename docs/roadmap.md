@@ -20,7 +20,7 @@ and understand without help.
 - [x] User-facing doc set: README, CONTEXT, CONTEXT-MAP, CONTRIBUTING,
       SECURITY, CODE_OF_CONDUCT, CHANGELOG, architecture, roadmap, ADR
       practice.
-- [ ] Issue and PR templates aligned with the PRD-style body documented
+- [x] Issue and PR templates aligned with the PRD-style body documented
       in `docs/agents/issue-tracker.md`.
 
 **Exit criterion.** A contributor can clone the repo and answer "what

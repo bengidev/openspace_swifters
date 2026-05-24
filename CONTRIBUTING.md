@@ -46,13 +46,13 @@ the trailer convention documented under
 
 ## Branching
 
-- The default branch is `master`.
-- Work happens on topic branches off `master`.
+- The default branch is `main`.
+- Work happens on topic branches off `main`.
 - Topic branches that close a tracked issue use the form
   `feat/issue-<N>-<slug>`, where `<N>` is the issue number and `<slug>`
   is a short, hyphenated description. Replace `feat` with `fix`, `docs`,
   `refactor`, etc., as appropriate.
-- Never push to `master` directly. Open a pull request.
+- Never push to `main` directly. Open a pull request.
 
 ## Commits
 
@@ -166,14 +166,14 @@ For docs-only changes, verify cross-links resolve.
 
 ## Branch protection
 
-The default branch (`master`) is protected. The maintainer applies the
+The default branch (`main`) is protected. The maintainer applies the
 ruleset through the GitHub UI; this section documents the configuration
 so a fresh maintainer, a fork, or a recovered repository can re-apply
 the same rules without guessing.
 
-The ruleset on `master` requires:
+The ruleset on `main` requires:
 
-- **Pull request before merging** — direct pushes to `master` are
+- **Pull request before merging** — direct pushes to `main` are
   rejected. All changes land through a PR.
 - **Required status checks** — the following CI jobs from
   [`.github/workflows/ci.yml`](.github/workflows/ci.yml) must report
@@ -182,12 +182,12 @@ The ruleset on `master` requires:
   - `test`
   - `lint`
 - **Strict required checks** — branches must be up to date with
-  `master` before merging, so the required jobs run against the
+  `main` before merging, so the required jobs run against the
   post-merge tree.
 - **Linear history** — merges use squash or rebase. No merge commits
-  on `master`.
-- **Block force pushes** — `git push --force` to `master` is rejected.
-- **Block deletions** — `master` cannot be deleted through the API or
+  on `main`.
+- **Block force pushes** — `git push --force` to `main` is rejected.
+- **Block deletions** — `main` cannot be deleted through the API or
   UI.
 
 To re-apply through the GitHub UI:
