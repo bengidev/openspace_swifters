@@ -3,8 +3,9 @@
 # Runs on every pull request and on push to the default branch. Three jobs:
 #   - build : xcodebuild build  against the OpenSpace scheme on an iOS 17.6
 #             simulator destination.
-#   - test  : xcodebuild test   against the same scheme and destination,
-#             surfacing Swift Testing results.
+#   - test  : xcodebuild test   for the OpenSpaceTests unit-test target only.
+#             UI tests are intentionally excluded from CI; users/developers
+#             run UI smoke tests manually on simulator/device.
 #   - lint  : swiftlint against the repo's .swiftlint.yml, failing on any
 #             violation (--strict).
 #
@@ -89,13 +90,15 @@ jobs:
             spm-${{ runner.os }}-test-
             spm-${{ runner.os }}-
 
-      - name: xcodebuild test
+      - name: xcodebuild unit tests
         run: |
           set -o pipefail
           xcodebuild test \
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME" \
             -destination "$XCODE_DESTINATION" \
+            -only-testing:OpenSpaceTests \
+            -skip-testing:OpenSpaceUITests \
             -configuration Debug \
             -derivedDataPath "$DERIVED_DATA" \
             -skipMacroValidation \
