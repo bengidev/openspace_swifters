@@ -24,11 +24,11 @@ struct ExampleView: View {
                             .accessibilityIdentifier("example-status-message")
                     }
 
-                    Button("Send example action") {
+                    Button("Call NoOp") {
                         viewStore.send(.primaryButtonTapped)
                     }
                     .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("example-primary-action")
+                    .accessibilityIdentifier("example-noop-action")
                 }
                 .padding()
                 .navigationTitle("Example")
