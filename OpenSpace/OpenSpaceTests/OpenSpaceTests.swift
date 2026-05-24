@@ -1,19 +1,16 @@
-//
-//  OpenSpaceTests.swift
-//  OpenSpaceTests
-//
-//  Created by Bambang Tri Rahmat Doni on 21/05/26.
-//
-
+import ComposableArchitecture
 @testable import OpenSpace
 import Testing
 
 struct OpenSpaceTests {
+    @Test func exampleContainerHandlesPrimaryAction() async {
+        let store = TestStore(initialState: ExampleContainer.State()) {
+            ExampleContainer()
+        }
 
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-        // Swift Testing Documentation
-        // https://developer.apple.com/documentation/testing
+        await store.send(.primaryButtonTapped) {
+            $0.actionCount = 1
+            $0.statusMessage = "Reducer handled 1 example action."
+        }
     }
-
 }
