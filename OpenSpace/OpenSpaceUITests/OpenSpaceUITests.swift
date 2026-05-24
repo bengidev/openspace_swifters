@@ -24,13 +24,11 @@ final class OpenSpaceUITests: XCTestCase {
 
     @MainActor
     func testExample() throws {
-        // UI tests must launch the application that they test.
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // XCUIAutomation Documentation
-        // https://developer.apple.com/documentation/xcuiautomation
+        XCTAssertTrue(app.staticTexts["OpenSpace Example"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["A minimal feature shell ready for reducers and clients."].exists)
     }
 
     @MainActor
