@@ -146,8 +146,8 @@ A PR description should answer four questions:
 
 1. **What** changed.
 2. **Why** it changed (link the issue).
-3. **How** it was tested (Xcode unit tests, UI tests, manual verification
-   on which simulator).
+3. **How** it was tested (CI build/lint/unit tests, plus any manual UI
+   verification on which simulator/device).
 4. **What is out of scope** for this PR but follows up.
 
 Keep PR titles ≤ 70 characters and use the same Conventional Commit
@@ -159,7 +159,8 @@ For changes that touch app code:
 
 - The `OpenSpace` scheme builds for an iOS 17.6 or later simulator.
 - Unit tests in `OpenSpaceTests` pass with Swift Testing.
-- UI tests in `OpenSpaceUITests` pass when relevant to the change.
+- UI smoke tests are performed manually by the user/developer when relevant;
+  `OpenSpaceUITests` is intentionally not part of CI.
 - The change does not introduce new compiler warnings.
 
 For docs-only changes, verify cross-links resolve.
@@ -251,6 +252,7 @@ Before requesting review:
 - [ ] Commit trailers link the relevant issue with `Refs:` or `Closes:`.
 - [ ] No third-party product names in the diff.
 - [ ] Reserved vocabulary respected.
-- [ ] Build, unit tests, and UI tests pass for the affected scheme.
+- [ ] Build, lint, and unit tests pass for the affected scheme.
+- [ ] Manual UI smoke testing is noted when relevant (performed by user/developer, not CI).
 - [ ] Docs cross-links resolve, if docs were touched.
 - [ ] No `git push` was performed without explicit instruction.

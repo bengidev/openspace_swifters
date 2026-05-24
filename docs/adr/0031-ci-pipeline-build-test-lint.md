@@ -1,4 +1,4 @@
-# 0015. CI pipeline: build, Swift Testing, and SwiftLint on PR and main; UI tests and coverage deferred to Phase 6
+# 0015. CI pipeline: build, Swift Testing unit tests, and SwiftLint on PR and main; UI smoke testing is manual
 
 - Status: Accepted
 - Date: 2026-05-22
@@ -23,9 +23,10 @@ The state of the surrounding decisions:
   a matching SDK, which constrains us to GitHub-hosted macOS runners
   with the appropriate Xcode version (or a pinned action that
   selects it).
-- UI tests, coverage gates, performance regressions, and security
-  scanners are productive in later phases but not in Phase 0. We
-  defer them deliberately rather than dropping them.
+- UI tests are productive but too slow and flaky for hosted CI. They
+  remain manual smoke tests performed by the user/developer on a
+  simulator or device when relevant. Coverage gates, performance
+  regressions, and security scanners are deferred deliberately.
 
 ## Decision
 
@@ -36,9 +37,10 @@ every push to `master`:
    modules once they exist) against the iOS Simulator destination
    matching the deployment floor. Must compile cleanly under Swift
    strict-concurrency settings.
-2. **Test.** `xcodebuild test` (or `swift test`) running the Swift
-   Testing suite. Failure on any `#expect` / `#require` fails the
-   job. Async timeouts are inherited from the test runner.
+2. **Test.** `xcodebuild test -only-testing:OpenSpaceTests` (or
+   `swift test`) running unit tests only. Failure on any `#expect` /
+   `#require` fails the job. UI tests are intentionally not invoked
+   by CI.
 3. **Lint.** `swiftlint lint --strict`. Warnings fail the job in
    strict mode so style drift cannot accumulate quietly.
 
@@ -57,13 +59,12 @@ Workflow shape:
   is configured at the branch-protection layer and noted in
   `CONTRIBUTING.md`.
 
-What is **deferred to Phase 6 (hardening)**, with tracking issues
-filed as that phase opens:
+What is **manual or deferred**, with tracking issues filed as needed:
 
 - **UI tests** (XCUITest target). The hooks are in the project
-  (per ADR-0005), but no UI test runs in CI in v1. They are slow,
-  flaky on hosted runners, and produce more noise than signal
-  before the surfaces stabilise.
+  (per ADR-0005), but no UI test runs in CI. They are slow, flaky
+  on hosted runners, and produce more noise than signal. User or
+  developer manual UI smoke testing covers this gap.
 - **Code coverage gates.** Coverage is computed locally during
   development; CI does not enforce a threshold in v1. Phase 6 picks
   a baseline and a ratchet policy.
@@ -80,9 +81,10 @@ What gets easier:
   the bar is uniform.
 - Branch protection on `master` keeps red builds out of the
   default branch without ceremony.
-- Adding the deferred jobs in Phase 6 is additive: drop in a UI-test
-  job, or a coverage-report step, without restructuring the
-  workflow.
+- Adding any future deferred jobs is additive: drop in a coverage-report
+  step or other hardening job without restructuring the workflow. UI
+  smoke testing remains a manual user/developer responsibility unless
+  a later ADR explicitly reverses this decision.
 
 What gets harder:
 
@@ -99,8 +101,9 @@ What gets harder:
 
 What we accept:
 
-- We trade UI-test confidence for v1 throughput. Manual UI smoke
-  testing on TestFlight or simulator covers the gap until Phase 6.
+- We trade UI-test confidence for CI throughput. Manual UI smoke
+  testing on simulator/device covers the gap and is performed by the
+  user/developer when relevant.
 - We trade coverage enforcement for v1 simplicity. Tests are still
   expected; the bar is "the change is tested," judged at review.
 - A green CI is necessary, not sufficient. Reviewers still read
@@ -112,10 +115,10 @@ What we accept:
   failing test ship; skipping lint lets style drift accumulate.
   Both are cheap to run alongside the build and pay back
   immediately at review time.
-- **Add UI tests now.** Rejected for v1. The surfaces are not
-  stable enough for UI tests to be a stable signal; XCUITest on
-  hosted runners is the most flake-prone job in our toolbox.
-  Phase 6 picks them up against a stabilised UI.
+- **Run UI tests in CI.** Rejected. XCUITest on hosted runners is the
+  most flake-prone job in our toolbox and can stall PR feedback for
+  little signal. Manual user/developer smoke testing is the accepted
+  path.
 - **Coverage gate at v1.** Rejected. Choosing a meaningful
   threshold without a baseline produces either a vacuous gate
   (everything passes) or a punitive one (everything fails). Phase

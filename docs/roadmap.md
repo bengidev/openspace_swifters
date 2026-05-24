@@ -43,8 +43,9 @@ docs.
       Test Client.
 
 **Exit criterion.** `OpenSpace` builds and launches on an iOS 17.6
-simulator into an empty but architecturally-correct shell, and tests
-pass.
+simulator into an empty but architecturally-correct shell, and CI
+build/lint/unit-test checks pass. UI smoke testing is manual and performed
+by the user/developer.
 
 ## Phase 2 — Onboarding
 
@@ -56,7 +57,7 @@ captures the consent the app needs.
 - [ ] Container Reducer + Flow Reducer for the onboarding sequence.
 - [ ] `OnboardingProgressEntity` (SwiftData) to gate re-entry.
 - [ ] Composition Root reads the entity at launch and routes accordingly.
-- [ ] Snapshot or UI tests for the onboarding flow.
+- [ ] Reducer/snapshot coverage for the onboarding flow; UI smoke testing is manual by the user/developer.
 
 **Exit criterion.** First-launch users complete onboarding once;
 subsequent launches skip directly to the main surface.
@@ -114,7 +115,7 @@ through at least Share Sheet and Shortcuts.
 - [ ] Accessibility audit (Dynamic Type, VoiceOver, reduced motion).
 - [ ] Performance pass on streaming and conversation list scrolling.
 - [ ] Security review: credential handling, log redaction, ATS posture.
-- [ ] CI green for build, unit tests, UI tests, lint.
+- [ ] CI green for build, unit tests, and lint. UI smoke testing remains manual by the user/developer.
 
 **Exit criterion.** Beta build distributable to external testers without
 known critical or accessibility-blocking issues.

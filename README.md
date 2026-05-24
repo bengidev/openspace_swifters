@@ -92,7 +92,7 @@ For contributors:
     ├── OpenSpace.xcodeproj
     ├── OpenSpace/             App target sources
     ├── OpenSpaceTests/        Unit tests (Swift Testing)
-    └── OpenSpaceUITests/      UI tests
+    └── OpenSpaceUITests/      Manual UI smoke-test target (not run in CI)
 ```
 
 ## Documentation map

@@ -103,6 +103,6 @@ without changing meaning) are fine.
 | 0028 | [Markdown rendering: third-party renderer with limited scope and 100 ms throttle](0028-markdown-rendering-third-party-limited-scope.md) | Accepted |
 | 0029 | [HTTP/SSE: URLSession AsyncBytes plus internal SSEParser; no reconnect/heartbeat/resume in v1](0029-http-sse-urlsession-asyncbytes-internal-parser.md) | Accepted |
 | 0030 | [Localization: String Catalog scaffolding; English only in v1; community translations post-v1](0030-localization-english-only-v1.md) | Accepted |
-| 0031 | [CI pipeline: build, Swift Testing, and SwiftLint on PR and main; UI tests and coverage deferred to Phase 6](0031-ci-pipeline-build-test-lint.md) | Accepted |
+| 0031 | [CI pipeline: build, Swift Testing unit tests, and SwiftLint on PR and main; UI smoke testing is manual](0031-ci-pipeline-build-test-lint.md) | Accepted |
 | 0032 | [Repository metadata: Contributors copyright, THIRD_PARTY.md, detailed CONTRIBUTING.md, standard badge set, architecture-emphasised tagline](0032-repository-metadata-and-tagline.md) | Accepted |
 | 0033 | [App identity: placeholder branding in v1; refined incrementally during development](0033-app-identity-placeholder-branding.md) | Accepted |

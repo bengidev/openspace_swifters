@@ -37,10 +37,9 @@ Closes: #
 ## Tests
 
 <!--
-The tests added or updated by this PR. If the change is process or
-configuration work with no test artefact, say so and explain how the
-change was validated (CI run, manual verification, schema migration
-dry-run, etc.).
+The tests added or updated by this PR. CI runs build, lint, and unit tests only.
+UI smoke testing is intentionally manual and should be noted here when relevant
+(performed by the user/developer on simulator/device).
 -->
 
 ## ADRs
