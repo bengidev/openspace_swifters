@@ -1,30 +1,46 @@
+import ComposableArchitecture
 import SwiftUI
 
 struct ExampleView: View {
+    let store: StoreOf<ExampleContainer>
+
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 48, weight: .semibold))
-                    .foregroundStyle(.tint)
+        WithViewStore(store, observe: { $0 }, content: { viewStore in
+            NavigationStack {
+                VStack(spacing: 16) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 48, weight: .semibold))
+                        .foregroundStyle(.tint)
 
-                VStack(spacing: 8) {
-                    Text("OpenSpace Example")
-                        .font(.title)
-                        .fontWeight(.semibold)
+                    VStack(spacing: 8) {
+                        Text("OpenSpace Example")
+                            .font(.title)
+                            .fontWeight(.semibold)
 
-                    Text("A minimal feature shell ready for reducers and clients.")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                        Text(viewStore.statusMessage)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("example-status-message")
+                    }
+
+                    Button("Send example action") {
+                        viewStore.send(.primaryButtonTapped)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("example-primary-action")
                 }
+                .padding()
+                .navigationTitle("Example")
             }
-            .padding()
-            .navigationTitle("Example")
-        }
+        })
     }
 }
 
 #Preview {
-    ExampleView()
+    ExampleView(
+        store: Store(initialState: ExampleContainer.State()) {
+            ExampleContainer()
+        }
+    )
 }
