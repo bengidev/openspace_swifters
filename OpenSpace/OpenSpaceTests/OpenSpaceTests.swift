@@ -3,11 +3,10 @@ import ComposableArchitecture
 import Testing
 
 struct OpenSpaceTests {
+    @MainActor
     @Test func exampleContainerCallsNoOpDependency() async {
         let store = TestStore(initialState: ExampleContainer.State()) {
-            ExampleContainer()
-        } withDependencies: {
-            $0.noOp.call = { "Stubbed NoOp response" }
+            ExampleContainer(noOp: NoOpClient(call: { "Stubbed NoOp response" }))
         }
 
         await store.send(.primaryButtonTapped) {

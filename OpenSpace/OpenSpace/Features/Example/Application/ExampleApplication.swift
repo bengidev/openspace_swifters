@@ -11,7 +11,11 @@ struct ExampleContainer: Reducer {
         case noOpResponse(String)
     }
 
-    @Dependency(\.noOp) private var noOp
+    private let noOp: NoOpClient
+
+    init(noOp: NoOpClient = .live) {
+        self.noOp = noOp
+    }
 
     var body: some Reducer<State, Action> {
         Reduce { state, action in
