@@ -1,9 +1,10 @@
 import ComposableArchitecture
+import Foundation
 
 struct ExampleContainer: Reducer {
     struct State: Equatable {
         var actionCount = 0
-        var statusMessage = "Waiting for a NoOp response."
+        var statusMessage = String(localized: "Waiting for a NoOp response.")
     }
 
     enum Action: Equatable {
@@ -22,7 +23,7 @@ struct ExampleContainer: Reducer {
             switch action {
             case .primaryButtonTapped:
                 state.actionCount += 1
-                state.statusMessage = "Calling NoOp…"
+                state.statusMessage = String(localized: "Calling NoOp…")
                 return .run { send in
                     await send(.noOpResponse(noOp.call()))
                 }
