@@ -11,6 +11,8 @@
 		B6DA5B4E2FBF6500002D6B02 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = B6DA5B4C2FBF5F0D002D6B02 /* ComposableArchitecture */; };
 		B65200012FC0000000000052 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = B65200002FC0000000000052 /* Dependencies */; };
 		B65200022FC0000000000052 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = B65200002FC0000000000052 /* Dependencies */; };
+		8DB43FF33319DA5B2CBD74C4 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = B5F88A8BD675322BCE66E844 /* CasePaths */; };
+		F35BF56BD2067D3D97986BAF /* PerceptionCore in Frameworks */ = {isa = PBXBuildFile; productRef = 232998356D27DF305376CDAD /* PerceptionCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +63,8 @@
 			files = (
 				B6DA5B4D2FBF5F0D002D6B02 /* ComposableArchitecture in Frameworks */,
 				B65200012FC0000000000052 /* Dependencies in Frameworks */,
+				8DB43FF33319DA5B2CBD74C4 /* CasePaths in Frameworks */,
+				F35BF56BD2067D3D97986BAF /* PerceptionCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,6 +74,8 @@
 			files = (
 				B6DA5B4E2FBF6500002D6B02 /* ComposableArchitecture in Frameworks */,
 				B65200022FC0000000000052 /* Dependencies in Frameworks */,
+				8DB43FF33319DA5B2CBD74C4 /* CasePaths in Frameworks */,
+				F35BF56BD2067D3D97986BAF /* PerceptionCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +131,8 @@
 			packageProductDependencies = (
 				B6DA5B4C2FBF5F0D002D6B02 /* ComposableArchitecture */,
 				B65200002FC0000000000052 /* Dependencies */,
+				B5F88A8BD675322BCE66E844 /* CasePaths */,
+				232998356D27DF305376CDAD /* PerceptionCore */,
 			);
 			productName = OpenSpace;
 			productReference = B6DA5B1F2FBF5E5E002D6B02 /* OpenSpace.app */;
@@ -150,6 +158,8 @@
 			packageProductDependencies = (
 				B6DA5B4C2FBF5F0D002D6B02 /* ComposableArchitecture */,
 				B65200002FC0000000000052 /* Dependencies */,
+				B5F88A8BD675322BCE66E844 /* CasePaths */,
+				232998356D27DF305376CDAD /* PerceptionCore */,
 			);
 			productName = OpenSpaceTests;
 			productReference = B6DA5B2E2FBF5E5F002D6B02 /* OpenSpaceTests.xctest */;
@@ -640,6 +650,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B6DA5B4B2FBF5F0D002D6B02 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = Dependencies;
+		};
+		B5F88A8BD675322BCE66E844 /* CasePaths */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B6DA5B4B2FBF5F0D002D6B02 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			productName = CasePaths;
+		};
+		232998356D27DF305376CDAD /* PerceptionCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B6DA5B4B2FBF5F0D002D6B02 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			productName = PerceptionCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
