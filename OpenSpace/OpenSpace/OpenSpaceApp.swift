@@ -5,24 +5,68 @@ import SwiftUI
 @main
 struct OpenSpaceApp: App {
     private let modelContainer: ModelContainer
-    private let store: StoreOf<ExampleContainer>
+
+    private let exampleStore: StoreOf<ExampleContainer>
+    private let onboardingStore: StoreOf<OnboardingContainer>
+
+    @State private var appRoute: AppRoute = .loading
+
+    enum AppRoute {
+        case loading
+        case onboarding
+        case main
+    }
 
     init() {
         let modelContainer = Self.makeModelContainer()
-
         self.modelContainer = modelContainer
-        self.store = Store(initialState: ExampleContainer.State()) {
+
+        self.exampleStore = Store(
+            initialState: ExampleContainer.State()
+        ) {
             ExampleContainer()
         } withDependencies: {
             $0.noOp = .live
+            $0.onboardingStorage = .live(modelContainer: modelContainer)
+        }
+
+        self.onboardingStore = Store(
+            initialState: OnboardingContainer.State()
+        ) {
+            OnboardingContainer()
+        } withDependencies: {
             $0.onboardingStorage = .live(modelContainer: modelContainer)
         }
     }
 
     var body: some Scene {
         WindowGroup {
-            ExampleView(store: store)
-                .modelContainer(modelContainer)
+            Group {
+                switch appRoute {
+                case .loading:
+                    ProgressView()
+                        .progressViewStyle(.circular)
+
+                case .onboarding:
+                    OnboardingContainerView(
+                        store: onboardingStore,
+                        onCompletion: { appRoute = .main }
+                    )
+
+                case .main:
+                    ExampleView(store: exampleStore)
+                }
+            }
+            .modelContainer(modelContainer)
+            .task {
+                let client = OnboardingStorageClient.live(
+                    modelContainer: modelContainer
+                )
+                let progress = try? await client.loadProgress()
+                appRoute = (progress == nil)
+                    ? .onboarding
+                    : .main
+            }
         }
     }
 
@@ -37,7 +81,9 @@ struct OpenSpaceApp: App {
                 migrationPlan: OpenSpaceMigrationPlan.self
             )
         } catch {
-            fatalError("Failed to create SwiftData model container: \(error)")
+            fatalError(
+                "Failed to create SwiftData model container: \(error)"
+            )
         }
     }
 }
