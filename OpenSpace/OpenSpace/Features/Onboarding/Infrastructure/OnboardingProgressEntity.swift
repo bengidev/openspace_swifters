@@ -9,7 +9,7 @@ import SwiftData
 /// - Completion: one row is upserted with `completedAt` and the
 ///   app version that completed onboarding.
 @Model
-final class OnboardingProgressEntity {
+final class OnboardingProgressEntity: @unchecked Sendable {
     @Attribute(.unique) var id: UUID
     var createdAt: Date
     var completedAt: Date?

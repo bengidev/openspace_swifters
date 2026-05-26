@@ -78,13 +78,15 @@ extension OnboardingStorageClient: DependencyKey {
     static let testValue: Self = {
         let store = TestProgressStore()
         return Self(
-            loadProgress: { store.progress },
+            loadProgress: { await store.progress },
             recordCompletion: { appVersion in
-                store.progress = OnboardingProgressEntity(
-                    id: UUID(),
-                    createdAt: Date(),
-                    completedAt: Date(),
-                    completedAtAppVersion: appVersion
+                await store.setProgress(
+                    OnboardingProgressEntity(
+                        id: UUID(),
+                        createdAt: Date(),
+                        completedAt: Date(),
+                        completedAtAppVersion: appVersion
+                    )
                 )
             }
         )
@@ -102,6 +104,10 @@ extension DependencyValues {
 
 // MARK: - Test helper
 
-private final class TestProgressStore: @unchecked Sendable {
+private actor TestProgressStore {
     var progress: OnboardingProgressEntity?
+
+    func setProgress(_ entity: OnboardingProgressEntity) {
+        progress = entity
+    }
 }
