@@ -81,7 +81,8 @@ struct OnboardingContainer {
             case .flow:
                 return .none
 
-            case .delegate:
+            case .delegate(.onboardingCompleted):
+                state.isFinished = true
                 return .none
             }
         }

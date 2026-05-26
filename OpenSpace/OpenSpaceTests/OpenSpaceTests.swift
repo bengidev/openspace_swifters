@@ -43,7 +43,9 @@ struct OpenSpaceTests {
 
         // User taps "Get Started" on the final slide.
         await store.send(.flow(.finishTapped))
-        await store.receive(.delegate(.onboardingCompleted))
+        await store.receive(.delegate(.onboardingCompleted)) {
+            $0.isFinished = true
+        }
     }
 
     /// Returning user: completed progress → delegate emitted immediately
@@ -74,6 +76,32 @@ struct OpenSpaceTests {
             $0.isFinished = true
         }
         await store.receive(.delegate(.onboardingCompleted))
+    }
+
+    @MainActor
+    @Test func onboardingFlowNavigatesThroughThreeSlides() async {
+        let store = TestStore(initialState: OnboardingFlow.State()) {
+            OnboardingFlow()
+        }
+
+        #expect(OnboardingSlide.all.count == 3)
+        #expect(store.state.totalPages == 3)
+        #expect(OnboardingSlide.all.map(\.systemImageName) == [
+            "sparkles",
+            "key.horizontal.fill",
+            "checkmark.circle.fill"
+        ])
+
+        await store.send(.nextTapped) {
+            $0.currentPage = 1
+        }
+        await store.send(.nextTapped) {
+            $0.currentPage = 2
+        }
+        await store.send(.nextTapped)
+        await store.send(.previousTapped) {
+            $0.currentPage = 1
+        }
     }
 
     /// Storage failure: `recordCompletion` throws → error surfaced
