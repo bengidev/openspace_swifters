@@ -55,6 +55,149 @@
           }
         }
       }
+    },
+    "Meet Your Assistant" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meet Your Assistant"
+          }
+        }
+      }
+    },
+    "OpenSpace includes an AI assistant that lives in the app, ready for conversation and actions when you need help." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenSpace includes an AI assistant that lives in the app, ready for conversation and actions when you need help."
+          }
+        }
+      }
+    },
+    "Bring Your Own Key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bring Your Own Key"
+          }
+        }
+      }
+    },
+    "Connect to the model providers you configure. OpenSpace supports multiple provider configs and keeps keys in Keychain." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to the model providers you configure. OpenSpace supports multiple provider configs and keeps keys in Keychain."
+          }
+        }
+      }
+    },
+    "Get Started" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get Started"
+          }
+        }
+      }
+    },
+    "You are ready to set up OpenSpace. Tap Get Started to finish onboarding and enter the app." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You are ready to set up OpenSpace. Tap Get Started to finish onboarding and enter the app."
+          }
+        }
+      }
+    },
+    "Back" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        }
+      }
+    },
+    "Next" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        }
+      }
+    },
+    "Page %lld of %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Go to onboarding page %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go to onboarding page %1$lld"
+          }
+        }
+      }
+    },
+    "Previous onboarding page" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous onboarding page"
+          }
+        }
+      }
+    },
+    "Continue onboarding" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue onboarding"
+          }
+        }
+      }
+    },
+    "Enter OpenSpace" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter OpenSpace"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
