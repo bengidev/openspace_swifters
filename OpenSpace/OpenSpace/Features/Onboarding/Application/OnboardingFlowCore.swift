@@ -23,6 +23,7 @@ struct OnboardingFlow {
         case nextTapped
         case previousTapped
         case finishTapped
+        case pageTapped(Int)
     }
 
     var body: some Reducer<State, Action> {
@@ -44,6 +45,13 @@ struct OnboardingFlow {
 
             case .finishTapped:
                 // Container observes this and handles persistence.
+                return .none
+
+            case let .pageTapped(index):
+                state.currentPage = min(
+                    max(index, 0),
+                    state.totalPages - 1
+                )
                 return .none
             }
         }
