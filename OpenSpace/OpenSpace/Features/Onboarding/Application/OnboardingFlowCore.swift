@@ -10,10 +10,12 @@ struct OnboardingFlow {
     @ObservableState
     struct State: Equatable {
         var currentPage: Int = 0
-        let totalPages: Int = 4
+        let totalPages: Int = OnboardingSlide.all.count
 
         var isLastPage: Bool { currentPage == totalPages - 1 }
-        var currentPageData: Int { currentPage }
+        var currentPageData: Int {
+            min(max(currentPage, 0), totalPages - 1)
+        }
     }
 
     @CasePathable
