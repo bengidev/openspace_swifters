@@ -11,18 +11,26 @@ struct OnboardingNavigationView: View {
 
                 HStack(spacing: 12) {
                     if store.currentPage > 0 {
-                        Button("Back") {
+                        Button(String(localized: "Back")) {
                             store.send(.previousTapped)
                         }
                         .buttonStyle(.bordered)
+                        .accessibilityLabel(String(localized: "Previous onboarding page"))
                     }
 
-                    Button(store.isLastPage ? "Get Started" : "Next") {
+                    Button(store.isLastPage
+                        ? String(localized: "Get Started")
+                        : String(localized: "Next")
+                    ) {
                         store.send(
                             store.isLastPage ? .finishTapped : .nextTapped
                         )
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityLabel(store.isLastPage
+                        ? String(localized: "Enter OpenSpace")
+                        : String(localized: "Continue onboarding")
+                    )
                 }
             }
             .padding(.horizontal, 24)
@@ -32,12 +40,17 @@ struct OnboardingNavigationView: View {
     private var pageIndicator: some View {
         HStack(spacing: 8) {
             ForEach(0..<store.totalPages, id: \.self) { index in
-                Circle()
-                    .fill(index == store.currentPage ? Color.accentColor : Color.secondary.opacity(0.35))
-                    .frame(width: 8, height: 8)
+                Button {
+                    store.send(.pageTapped(index))
+                } label: {
+                    Circle()
+                        .fill(index == store.currentPage ? Color.accentColor : Color.secondary.opacity(0.35))
+                        .frame(width: 8, height: 8)
+                }
+                .accessibilityLabel(String(localized: "Go to onboarding page \(index + 1)"))
             }
         }
-        .accessibilityLabel("Page \(store.currentPage + 1) of \(store.totalPages)")
+        .accessibilityLabel(String(localized: "Page \(store.currentPage + 1) of \(store.totalPages)"))
     }
 }
 
