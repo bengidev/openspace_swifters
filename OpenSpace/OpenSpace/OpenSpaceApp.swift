@@ -15,6 +15,7 @@ struct OpenSpaceApp: App {
             ExampleContainer()
         } withDependencies: {
             $0.noOp = .live
+            $0.onboardingStorage = .live(modelContainer: modelContainer)
         }
     }
 
@@ -27,7 +28,14 @@ struct OpenSpaceApp: App {
 
     private static func makeModelContainer() -> ModelContainer {
         do {
-            return try ModelContainer(for: PersistedPlaceholder.self)
+            // Register every @Model type from OpenSpaceSchemaV1.models here.
+            // iOS 17.6 does not support the array-based for: initializer;
+            // use the variadic form. Keep this list in sync with the schema.
+            return try ModelContainer(
+                for: PersistedPlaceholder.self,
+                OnboardingProgressEntity.self,
+                migrationPlan: OpenSpaceMigrationPlan.self
+            )
         } catch {
             fatalError("Failed to create SwiftData model container: \(error)")
         }
