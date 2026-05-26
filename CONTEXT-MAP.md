@@ -6,9 +6,10 @@ follow the link to the context relevant to the topic at hand.
 
 ## Active contexts
 
-| Context        | Glossary                       | Scope                                                                          |
-| -------------- | ------------------------------ | ------------------------------------------------------------------------------ |
-| App (root)     | [`CONTEXT.md`](CONTEXT.md)     | Cross-cutting product vocabulary used in any feature: Assistant, Provider, etc. |
+| Context        | Glossary                                                       | Scope                                                                          |
+| -------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| App (root)     | [`CONTEXT.md`](CONTEXT.md)                                     | Cross-cutting product vocabulary used in any feature: Assistant, Provider, etc. |
+| Onboarding     | [`OpenSpace/OpenSpace/Features/Onboarding/CONTEXT.md`](OpenSpace/OpenSpace/Features/Onboarding/CONTEXT.md) | Onboarding flow, progress gating, persisted entities. |
 
 ## How to add a new context
 
@@ -21,7 +22,6 @@ root [`CONTEXT.md`](CONTEXT.md).
 Example future entries (commented for reference):
 
 <!--
-| Onboarding     | OpenSpace/OpenSpace/Features/Onboarding/CONTEXT.md     | Onboarding flow, progress gating, persisted entities. |
 | Conversation   | OpenSpace/OpenSpace/Features/Conversation/CONTEXT.md   | Chat surface, message lifecycle, streaming state.     |
 | Shared/Client  | OpenSpace/OpenSpace/Shared/CONTEXT.md                  | Cross-cutting Clients (Provider, Storage, Telemetry). |
 -->
