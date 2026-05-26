@@ -1,6 +1,6 @@
 import ComposableArchitecture
-@testable import OpenSpace
 import Foundation
+@testable import OpenSpace
 import Testing
 
 struct OpenSpaceTests {
