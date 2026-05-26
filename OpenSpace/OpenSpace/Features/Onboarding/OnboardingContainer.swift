@@ -62,7 +62,7 @@ struct OnboardingContainer {
                         ) as? String ?? "0.0.0"
                     do {
                         try await onboardingStorage.recordCompletion(
-                            appVersion: appVersion
+                            appVersion
                         )
                         await send(.delegate(.onboardingCompleted))
                     } catch {
