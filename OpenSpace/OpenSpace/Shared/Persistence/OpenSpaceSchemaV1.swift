@@ -1,4 +1,4 @@
-import SwiftData
+@preconcurrency import SwiftData
 
 /// Single source of truth for the v1 persistence schema (ADR-0017).
 /// Future schemas (V2, V3, ...) plug into `OpenSpaceMigrationPlan` with
