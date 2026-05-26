@@ -10,20 +10,27 @@ struct OnboardingSlide: Equatable, Identifiable {
         OnboardingSlide(
             id: 0,
             title: String(localized: "Meet Your Assistant"),
-            body: String(localized: "OpenSpace includes an AI assistant that lives in the app, ready for conversation and actions when you need help."),
+            body: String(localized: slide1Body),
             systemImageName: "sparkles"
         ),
         OnboardingSlide(
             id: 1,
             title: String(localized: "Bring Your Own Key"),
-            body: String(localized: "Connect to the model providers you configure. OpenSpace supports multiple provider configs and keeps keys in Keychain."),
+            body: String(localized: slide2Body),
             systemImageName: "key.horizontal.fill"
         ),
         OnboardingSlide(
             id: 2,
             title: String(localized: "Get Started"),
-            body: String(localized: "You are ready to set up OpenSpace. Tap Get Started to finish onboarding and enter the app."),
+            body: String(localized: slide3Body),
             systemImageName: "checkmark.circle.fill"
         )
     ]
 }
+
+private let slide1Body: String.LocalizationValue =
+    "OpenSpace includes an AI assistant that lives in the app, ready for conversation and actions when you need help."
+private let slide2Body: String.LocalizationValue =
+    "Connect to the model providers you configure. OpenSpace supports multiple provider configs and keeps keys in Keychain."
+private let slide3Body: String.LocalizationValue =
+    "You are ready to set up OpenSpace. Tap Get Started to finish onboarding and enter the app."
