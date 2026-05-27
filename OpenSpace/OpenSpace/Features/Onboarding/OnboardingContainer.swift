@@ -1,18 +1,47 @@
 import ComposableArchitecture
 import Foundation
+import SwiftUI
+
+struct OnboardingContainerView: View {
+    let store: StoreOf<OnboardingContainer>
+    var onCompletion: (() -> Void)?
+    var onThemeToggle: (() -> Void)?
+
+    var body: some View {
+        OnboardingView(
+            store: store.scope(state: \.flow, action: \.flow),
+            onThemeToggle: {
+                store.send(.themeToggleTapped)
+                onThemeToggle?()
+            }
+        )
+        .onChange(of: store.state.isFinished) { _, isFinished in
+            if isFinished { onCompletion?() }
+        }
+        .overlay(alignment: .bottom) {
+            if let message = store.state.errorMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 82)
+            }
+        }
+    }
+}
 
 /// Parent reducer for the Onboarding feature.
 ///
-/// Scopes `OnboardingFlow` for slide navigation and owns the
-/// persistence gate: reads progress at launch via
-/// `OnboardingStorageClient`, routes to Flow or signals completion,
-/// and writes the completion record when the user finishes.
+/// Scopes `OnboardingFlow` for the reference visual carousel and owns the
+/// persistence gate: reads progress at launch and writes completion when the
+/// user enters OpenSpace on the final page.
 @Reducer
 struct OnboardingContainer {
     @ObservableState
     struct State: Equatable {
-        var flow: OnboardingFlow.State = OnboardingFlow.State()
-        var isFinished: Bool = false
+        var flow = OnboardingFlowState()
+        var isFinished = false
         var errorMessage: String?
     }
 
@@ -20,7 +49,8 @@ struct OnboardingContainer {
     enum Action: Equatable {
         case task
         case progressLoaded(Bool)
-        case flow(OnboardingFlow.Action)
+        case themeToggleTapped
+        case flow(OnboardingFlowAction)
         case recordCompletionFailed(String)
         case delegate(Delegate)
 
@@ -41,10 +71,8 @@ struct OnboardingContainer {
             switch action {
             case .task:
                 return .run { send in
-                    let progress = try? await onboardingStorage
-                        .loadProgress()
-                    let didComplete = progress?.completedAt != nil
-                    await send(.progressLoaded(didComplete))
+                    let progress = try? await onboardingStorage.loadProgress()
+                    await send(.progressLoaded(progress?.completedAt != nil))
                 }
 
             case let .progressLoaded(didCompletePreviously):
@@ -54,23 +82,19 @@ struct OnboardingContainer {
                 }
                 return .none
 
+            case .themeToggleTapped:
+                return .none
+
             case .flow(.finishTapped):
                 return .run { send in
                     let appVersion = Bundle.main
-                        .object(
-                            forInfoDictionaryKey: "CFBundleShortVersionString"
-                        ) as? String ?? "0.0.0"
+                        .object(forInfoDictionaryKey: "CFBundleShortVersionString")
+                        as? String ?? "0.0.0"
                     do {
-                        try await onboardingStorage.recordCompletion(
-                            appVersion
-                        )
+                        try await onboardingStorage.recordCompletion(appVersion)
                         await send(.delegate(.onboardingCompleted))
                     } catch {
-                        await send(
-                            .recordCompletionFailed(
-                                error.localizedDescription
-                            )
-                        )
+                        await send(.recordCompletionFailed(error.localizedDescription))
                     }
                 }
 
@@ -87,4 +111,13 @@ struct OnboardingContainer {
             }
         }
     }
+}
+
+#Preview {
+    OnboardingContainerView(
+        store: Store(initialState: OnboardingContainer.State()) {
+            OnboardingContainer()
+        }
+    )
+    .environment(\.palette, OpenSpacePalette.resolve(.dark))
 }

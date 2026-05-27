@@ -9,7 +9,9 @@ struct OpenSpaceApp: App {
     private let exampleStore: StoreOf<ExampleContainer>
     private let onboardingStore: StoreOf<OnboardingContainer>
 
-    @State private var appRoute: AppRoute = .loading
+    @AppStorage("openspace.appTheme") private var appThemeRaw = AppTheme.system.rawValue
+    @Environment(\.colorScheme) private var systemColorScheme
+    @State private var appRoute: AppRoute = .onboarding
 
     enum AppRoute {
         case loading
@@ -39,8 +41,27 @@ struct OpenSpaceApp: App {
         }
     }
 
+    private var appTheme: AppTheme {
+        AppTheme(rawValue: appThemeRaw) ?? .system
+    }
+
+    private var preferredColorScheme: ColorScheme? {
+        switch appTheme {
+        case .system:
+            return nil
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
+            let palette = OpenSpacePalette.resolve(
+                preferredColorScheme ?? systemColorScheme
+            )
+
             Group {
                 switch appRoute {
                 case .loading:
@@ -50,13 +71,17 @@ struct OpenSpaceApp: App {
                 case .onboarding:
                     OnboardingContainerView(
                         store: onboardingStore,
-                        onCompletion: { appRoute = .main }
+                        onCompletion: { appRoute = .main },
+                        onThemeToggle: { appThemeRaw = appTheme.next.rawValue }
                     )
 
                 case .main:
                     ExampleView(store: exampleStore)
                 }
             }
+            .environment(\.palette, palette)
+            .environment(\.appTheme, appTheme)
+            .preferredColorScheme(preferredColorScheme)
             .modelContainer(modelContainer)
             .task {
                 let client = OnboardingStorageClient.live(

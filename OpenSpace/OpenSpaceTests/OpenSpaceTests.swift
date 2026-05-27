@@ -41,8 +41,10 @@ struct OpenSpaceTests {
         await store.send(.task)
         await store.receive(.progressLoaded(false))
 
-        // User taps "Get Started" on the final slide.
-        await store.send(.flow(.finishTapped))
+        // User taps "Enter OpenSpace" on the final page.
+        await store.send(.flow(.finishTapped)) {
+            $0.flow.isFinished = true
+        }
         await store.receive(.delegate(.onboardingCompleted)) {
             $0.isFinished = true
         }
@@ -79,17 +81,19 @@ struct OpenSpaceTests {
     }
 
     @MainActor
-    @Test func onboardingFlowNavigatesThroughThreeSlides() async {
-        let store = TestStore(initialState: OnboardingFlow.State()) {
+    @Test func onboardingFlowNavigatesThroughReferencePages() async {
+        let store = TestStore(initialState: OnboardingFlowState()) {
             OnboardingFlow()
         }
 
-        #expect(OnboardingSlide.all.count == 3)
-        #expect(store.state.totalPages == 3)
-        #expect(OnboardingSlide.all.map(\.systemImageName) == [
-            "sparkles",
-            "key.horizontal.fill",
-            "checkmark.circle.fill"
+        #expect(OnboardingPageModel.all.count == 5)
+        #expect(store.state.totalPages == 5)
+        #expect(OnboardingPageModel.all.map(\.type) == [
+            .encryptedPairing,
+            .ideaStudio,
+            .promptQueue,
+            .reasoningControl,
+            .workspaceReady
         ])
 
         await store.send(.nextTapped) {
@@ -98,9 +102,15 @@ struct OpenSpaceTests {
         await store.send(.nextTapped) {
             $0.currentPage = 2
         }
+        await store.send(.nextTapped) {
+            $0.currentPage = 3
+        }
+        await store.send(.skipTapped) {
+            $0.currentPage = 4
+        }
         await store.send(.nextTapped)
         await store.send(.previousTapped) {
-            $0.currentPage = 1
+            $0.currentPage = 3
         }
     }
 
@@ -131,8 +141,10 @@ struct OpenSpaceTests {
         await store.send(.task)
         await store.receive(.progressLoaded(false))
 
-        // User taps "Get Started" → recordCompletion throws.
-        await store.send(.flow(.finishTapped))
+        // User taps "Enter OpenSpace" → recordCompletion throws.
+        await store.send(.flow(.finishTapped)) {
+            $0.flow.isFinished = true
+        }
         await store.receive(.recordCompletionFailed("disk full")) {
             $0.errorMessage = "disk full"
         }

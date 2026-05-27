@@ -1,57 +1,60 @@
 import ComposableArchitecture
 
-/// Slide state machine for the onboarding carousel.
-///
-/// Owns page advancement and boundary clamping. Does **not** call
-/// persistence — the parent `OnboardingContainer` handles storage
-/// when the user taps "Get Started" on the final slide.
+@ObservableState
+struct OnboardingFlowState: Equatable {
+    var currentPage = 0
+    var isFinished = false
+    var pageDemo = OnboardingPageDemoState()
+
+    var totalPages: Int { OnboardingPageModel.all.count }
+    var isLastPage: Bool { currentPage >= totalPages - 1 }
+    var currentPageData: OnboardingPageModel {
+        let safeIndex = min(max(currentPage, 0), totalPages - 1)
+        return OnboardingPageModel.all[safeIndex]
+    }
+}
+
+@CasePathable
+enum OnboardingFlowAction: Equatable {
+    case nextTapped
+    case previousTapped
+    case pageSelected(Int)
+    case finishTapped
+    case skipTapped
+    case themeToggleTapped
+    case pageDemo(OnboardingPageDemoAction)
+}
+
 @Reducer
 struct OnboardingFlow {
-    @ObservableState
-    struct State: Equatable {
-        var currentPage: Int = 0
-        let totalPages: Int = OnboardingSlide.all.count
-
-        var isLastPage: Bool { currentPage == totalPages - 1 }
-        var currentPageData: Int {
-            min(max(currentPage, 0), totalPages - 1)
+    var body: some Reducer<OnboardingFlowState, OnboardingFlowAction> {
+        Scope(state: \.pageDemo, action: \.pageDemo) {
+            OnboardingPageDemo()
         }
-    }
 
-    @CasePathable
-    enum Action: Equatable {
-        case nextTapped
-        case previousTapped
-        case finishTapped
-        case pageTapped(Int)
-    }
-
-    var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
             case .nextTapped:
-                state.currentPage = min(
-                    state.currentPage + 1,
-                    state.totalPages - 1
-                )
+                state.currentPage = min(state.currentPage + 1, state.totalPages - 1)
                 return .none
 
             case .previousTapped:
-                state.currentPage = max(
-                    state.currentPage - 1,
-                    0
-                )
+                state.currentPage = max(state.currentPage - 1, 0)
+                return .none
+
+            case let .pageSelected(index):
+                state.currentPage = min(max(index, 0), state.totalPages - 1)
                 return .none
 
             case .finishTapped:
-                // Container observes this and handles persistence.
+                state.isFinished = true
                 return .none
 
-            case let .pageTapped(index):
-                state.currentPage = min(
-                    max(index, 0),
-                    state.totalPages - 1
-                )
+            case .skipTapped:
+                state.currentPage = state.totalPages - 1
+                return .none
+
+            case .themeToggleTapped, .pageDemo:
                 return .none
             }
         }
