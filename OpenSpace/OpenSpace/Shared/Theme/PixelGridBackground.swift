@@ -9,9 +9,9 @@ struct PixelGridBackground: View {
 
     var body: some View {
         Canvas { context, size in
-            for x in stride(from: CGFloat(0), through: size.width, by: spacing) {
-                for y in stride(from: CGFloat(0), through: size.height, by: spacing) {
-                    let rect = CGRect(x: x, y: y, width: dotSize, height: dotSize)
+            for column in stride(from: CGFloat(0), through: size.width, by: spacing) {
+                for row in stride(from: CGFloat(0), through: size.height, by: spacing) {
+                    let rect = CGRect(x: column, y: row, width: dotSize, height: dotSize)
                     context.fill(
                         Path(ellipseIn: rect),
                         with: .color(palette.textPrimary.opacity(opacity))

@@ -26,7 +26,10 @@ struct OnboardingPageDemo {
                 return .none
 
             case .addQueuedPromptTapped:
-                state.queuedPromptCount = state.queuedPromptCount >= OnboardingPromptQueueItemModel.samples.count ? 2 : state.queuedPromptCount + 1
+                let maxQueue = OnboardingPromptQueueItemModel.samples.count
+                state.queuedPromptCount = state.queuedPromptCount >= maxQueue
+                    ? 2
+                    : state.queuedPromptCount + 1
                 return .none
 
             case let .reasoningLevelChanged(value):

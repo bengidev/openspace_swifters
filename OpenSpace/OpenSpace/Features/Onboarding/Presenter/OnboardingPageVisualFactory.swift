@@ -2,6 +2,7 @@ import ComposableArchitecture
 import SwiftUI
 
 enum OnboardingPageVisualFactory {
+    @MainActor
     @ViewBuilder
     static func make(
         page: OnboardingPageModel,

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct FactoryBadge: View {
     let title: String
-    var systemImage: String? = nil
+    var systemImage: String?
 
     @Environment(\.palette) private var palette
 

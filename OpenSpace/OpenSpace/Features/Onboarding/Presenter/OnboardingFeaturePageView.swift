@@ -101,10 +101,14 @@ struct OnboardingFeaturePageView: View {
                                     }
                                 }
 
-                                Button(action: { store.send(.addQueuedPromptTapped) }) {
+                                Button(
+                                    action: { store.send(.addQueuedPromptTapped) },
+                                    label: {
                                     HStack(spacing: 8) {
                                         Image(systemName: "plus")
-                                        Text(store.queuedPromptCount >= OnboardingPromptQueueItemModel.samples.count ? "RESET QUEUE" : "ADD FOLLOW-UP")
+                                        let queueFull = store.queuedPromptCount
+                                            >= OnboardingPromptQueueItemModel.samples.count
+                                        Text(queueFull ? "RESET QUEUE" : "ADD FOLLOW-UP")
                                         Spacer()
                                         Text("⌘↩")
                                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
@@ -124,7 +128,8 @@ struct OnboardingFeaturePageView: View {
                                         RoundedRectangle(cornerRadius: 4, style: .continuous)
                                             .stroke(palette.accent.opacity(0.28), lineWidth: 1)
                                     )
-                                }
+                                    }
+                                )
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Add follow-up prompt")
                                 .padding(.horizontal, 14)

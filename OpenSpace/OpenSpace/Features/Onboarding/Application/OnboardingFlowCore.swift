@@ -19,7 +19,6 @@ enum OnboardingFlowAction: Equatable {
     case nextTapped
     case previousTapped
     case pageSelected(Int)
-    case pageTapped(Int)
     case finishTapped
     case skipTapped
     case themeToggleTapped
@@ -43,7 +42,7 @@ struct OnboardingFlow {
                 state.currentPage = max(state.currentPage - 1, 0)
                 return .none
 
-            case let .pageSelected(index), let .pageTapped(index):
+            case let .pageSelected(index):
                 state.currentPage = min(max(index, 0), state.totalPages - 1)
                 return .none
 
