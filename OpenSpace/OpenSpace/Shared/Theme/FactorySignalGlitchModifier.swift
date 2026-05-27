@@ -1,0 +1,33 @@
+import SwiftUI
+
+struct FactorySignalGlitchModifier: ViewModifier {
+    let progress: Double
+    let intensity: Double
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.red.opacity(0.06 * intensity),
+                                Color.clear,
+                                Color.blue.opacity(0.06 * intensity),
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .blendMode(.screen)
+                    .allowsHitTesting(false)
+            )
+            .offset(x: sin(progress * .pi * 4) * 0.5 * intensity)
+    }
+}
+
+extension View {
+    func factorySignalGlitch(progress: Double, intensity: Double = 1) -> some View {
+        modifier(FactorySignalGlitchModifier(progress: progress, intensity: intensity))
+    }
+}
