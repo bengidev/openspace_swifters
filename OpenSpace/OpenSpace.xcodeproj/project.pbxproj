@@ -38,9 +38,24 @@
 		B6DA5B382FBF5E5F002D6B02 /* OpenSpaceUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpenSpaceUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B65200812FC0000000000081 /* Exceptions for "OpenSpace" folder in "OpenSpace" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Features/Onboarding/CONTEXT.md,
+				Shared/CONTEXT.md,
+				Shared/Networking/README.md,
+			);
+			target = B6DA5B1E2FBF5E5E002D6B02 /* OpenSpace */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B6DA5B212FBF5E5E002D6B02 /* OpenSpace */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B65200812FC0000000000081 /* Exceptions for "OpenSpace" folder in "OpenSpace" target */,
+			);
 			path = OpenSpace;
 			sourceTree = "<group>";
 		};

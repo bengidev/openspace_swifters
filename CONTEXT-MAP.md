@@ -10,6 +10,7 @@ follow the link to the context relevant to the topic at hand.
 | -------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | App (root)     | [`CONTEXT.md`](CONTEXT.md)                                     | Cross-cutting product vocabulary used in any feature: Assistant, Provider, etc. |
 | Onboarding     | [`OpenSpace/OpenSpace/Features/Onboarding/CONTEXT.md`](OpenSpace/OpenSpace/Features/Onboarding/CONTEXT.md) | Onboarding flow, progress gating, persisted entities. |
+| Shared         | [`OpenSpace/OpenSpace/Shared/CONTEXT.md`](OpenSpace/OpenSpace/Shared/CONTEXT.md) | Cross-cutting Clients, Provider transport, SSE parser placement. |
 
 ## How to add a new context
 
@@ -40,4 +41,6 @@ Example future entries (commented for reference):
 System-wide architectural decisions live at [`docs/adr/`](docs/adr/).
 Feature-scoped decisions, when introduced, live at
 `OpenSpace/OpenSpace/Features/<Feature>/docs/adr/` and cross-cutting
-client decisions at `OpenSpace/OpenSpace/Shared/docs/adr/`.
+client decisions at `OpenSpace/OpenSpace/Shared/docs/adr/`. System-wide
+Provider transport decisions currently include ADR-0029, which names the
+canonical SSE parser file as `OpenSpace/OpenSpace/Shared/Networking/SSEParser.swift`.

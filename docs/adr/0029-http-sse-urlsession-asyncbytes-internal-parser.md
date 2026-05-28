@@ -92,6 +92,16 @@ streaming bytes API — plus a small **internal SSE parser** at
   it without changing the parser's public shape, but no Live
   Provider in v1 issues that header.
 
+## Follow-up notes
+
+- 2026-05-28: ADR-0029 is the canonical placement source for the v1 SSE
+  parser. Older planning issue language that names
+  `OpenSpace/OpenSpace/Shared/Internal/SSE/` is superseded by this ADR and the
+  Shared context. Implement `SSEParser` at
+  `OpenSpace/OpenSpace/Shared/Networking/SSEParser.swift`; place adjacent
+  Provider streaming transport helpers under `OpenSpace/OpenSpace/Shared/Networking/`
+  unless a later ADR says otherwise.
+
 ## Consequences
 
 What gets easier:
