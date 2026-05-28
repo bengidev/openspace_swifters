@@ -135,6 +135,20 @@ struct SSEParserTests {
         #expect(events[0].data == "[DONE]")
     }
 
+    // MARK: - Combined event + data + id
+
+    /// All three fields present in a single record.
+    @Test func parsesEventWithDataAndId() async {
+        let lines = ["event: delta", "id: 7", "data: payload", ""]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].event == "delta")
+        #expect(events[0].id == "7")
+        #expect(events[0].data == "payload")
+    }
+
     // MARK: - Leading space stripping
 
     /// Single leading space after colon is stripped per spec.
