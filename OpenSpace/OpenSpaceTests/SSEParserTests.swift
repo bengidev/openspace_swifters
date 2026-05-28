@@ -181,6 +181,38 @@ struct SSEParserTests {
         #expect(events[0].data == "after retry")
     }
 
+    // MARK: - Malformed lines
+
+    /// Lines without a colon are silently ignored.
+    @Test func malformedLineWithoutColonIsIgnored() async {
+        let lines = ["no colon here", "data: valid", ""]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == "valid")
+    }
+
+    /// Mixed malformed and valid lines produce only valid events.
+    @Test func mixedMalformedAndValidLines() async {
+        let lines = [
+            "garbage",
+            "data: first",
+            "",
+            "another bad line",
+            "event: test",
+            "data: second",
+            "",
+        ]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 2)
+        #expect(events[0].data == "first")
+        #expect(events[1].event == "test")
+        #expect(events[1].data == "second")
+    }
+
     // MARK: - Record without data is discarded
 
     /// Event field alone with no data — discarded.
