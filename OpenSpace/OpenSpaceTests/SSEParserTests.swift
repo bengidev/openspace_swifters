@@ -169,6 +169,18 @@ struct SSEParserTests {
         #expect(events[0].data == "nospaces")
     }
 
+    // MARK: - Retry field (recognized, ignored)
+
+    /// `retry:` field does not fail parsing or produce spurious events.
+    @Test func retryFieldIsIgnored() async {
+        let lines = ["retry: 3000", "data: after retry", ""]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == "after retry")
+    }
+
     // MARK: - Record without data is discarded
 
     /// Event field alone with no data — discarded.
