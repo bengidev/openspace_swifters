@@ -22,12 +22,13 @@ enum SSEParser {
     /// - Parameter lines: An async sequence of lines without trailing
     ///   line terminators. No URL, URLSession, or vendor code is
     ///   required.
-    /// - Returns: An `AsyncStream<SSEEvent>` that yields each parsed
-    ///   record and finishes when the input is exhausted.
+    /// - Returns: An `AsyncThrowingStream<SSEEvent, Error>` that yields
+    ///   each parsed record, finishes when the input is exhausted, and
+    ///   propagates upstream sequence failures.
     static func parse<L: AsyncSequence & Sendable>(
         _ lines: L
-    ) -> AsyncStream<SSEEvent> where L.Element == String {
-        AsyncStream<SSEEvent> { continuation in
+    ) -> AsyncThrowingStream<SSEEvent, Error> where L.Element == String {
+        AsyncThrowingStream<SSEEvent, Error> { continuation in
             let task = Task {
                 var event: String?
                 var dataLines: [String] = []
@@ -68,21 +69,22 @@ enum SSEParser {
                             break
                         }
                     }
+
+                    // Flush any unterminated record only after normal
+                    // end-of-stream. A thrown upstream error/cancel must
+                    // not emit a partial record.
+                    if let record = Self.emit(
+                        event: event,
+                        dataLines: dataLines,
+                        id: id
+                    ) {
+                        continuation.yield(record)
+                    }
+
+                    continuation.finish()
                 } catch {
-                    // Upstream threw (e.g. URLSession cancelled).
-                    // Flush nothing; stream terminates below.
+                    continuation.finish(throwing: error)
                 }
-
-                // Flush any unterminated record at end-of-stream.
-                if let record = Self.emit(
-                    event: event,
-                    dataLines: dataLines,
-                    id: id
-                ) {
-                    continuation.yield(record)
-                }
-
-                continuation.finish()
             }
 
             continuation.onTermination = { @Sendable _ in

@@ -169,12 +169,30 @@ struct SSEParserTests {
 
     // MARK: - Helpers
 
+    @Test func upstreamErrorPropagatesWithoutFlushingPartialEvent() async {
+        let stream = SSEParser.parse(throwingAfterPartialEvent())
+        var iterator = stream.makeAsyncIterator()
+
+        do {
+            _ = try await iterator.next()
+            Issue.record("Expected upstream failure")
+        } catch let error as TestSSEError {
+            #expect(error == .upstreamFailed)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
     private func collect(
-        _ stream: AsyncStream<SSEEvent>
+        _ stream: AsyncThrowingStream<SSEEvent, Error>
     ) async -> [SSEEvent] {
         var result: [SSEEvent] = []
-        for await event in stream {
-            result.append(event)
+        do {
+            for try await event in stream {
+                result.append(event)
+            }
+        } catch {
+            Issue.record("Unexpected parser error: \(error)")
         }
         return result
     }
@@ -191,5 +209,16 @@ private func testAsync(_ lines: [String]) -> AsyncStream<String> {
             continuation.yield(line)
         }
         continuation.finish()
+    }
+}
+
+private enum TestSSEError: Error, Equatable {
+    case upstreamFailed
+}
+
+private func throwingAfterPartialEvent() -> AsyncThrowingStream<String, Error> {
+    AsyncThrowingStream { continuation in
+        continuation.yield("data: partial")
+        continuation.finish(throwing: TestSSEError.upstreamFailed)
     }
 }
