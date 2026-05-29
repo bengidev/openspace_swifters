@@ -274,8 +274,8 @@ struct SSETransportValidationTests {
                 events.append(event)
             }
             #expect(events.count == 2)
-            #expect(events[0].data == "hello")
-            #expect(events[1].data == "world")
+            #expect(events.first?.data == "hello")
+            #expect(events.dropFirst().first?.data == "world")
         } catch {
             Issue.record("Unexpected error: \(error)")
         }

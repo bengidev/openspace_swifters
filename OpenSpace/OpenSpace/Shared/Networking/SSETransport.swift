@@ -52,19 +52,21 @@ enum SSETransport {
         do {
             let (bytes, response) = try await session.bytes(for: request)
 
+            let lines = SSELineSequence(base: bytes)
+
             // Validate HTTP status code and capture error context
             // for non-2xx responses.
             let httpResponse = try await validateResponse(
                 response,
                 host: host,
-                bodyLines: bytes.lines
+                bodyLines: lines
             )
 
             // Validate Content-Type.
             try validateContentType(httpResponse)
 
             // Feed lines through the shared parser.
-            return SSEParser.parse(bytes.lines)
+            return SSEParser.parse(lines)
         } catch is CancellationError {
             throw CancellationError()
         } catch let error as SSETransportError {
@@ -84,7 +86,7 @@ enum SSETransport {
     static func validateResponse(
         _ response: URLResponse,
         host: String,
-        bodyLines: AsyncLineSequence<URLSession.AsyncBytes>
+        bodyLines: SSELineSequence
     ) async throws -> HTTPURLResponse {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw SSETransportError.invalidResponse
@@ -181,7 +183,7 @@ enum SSETransport {
     /// The excerpt is useful for diagnostics and error mapping
     /// without consuming unbounded memory from large error payloads.
     static func readBodyExcerpt(
-        from lines: AsyncLineSequence<URLSession.AsyncBytes>
+        from lines: SSELineSequence
     ) async -> String {
         var excerpt = ""
         do {
@@ -202,6 +204,70 @@ enum SSETransport {
             excerpt = String(excerpt.prefix(bodyExcerptMaxLength))
         }
         return excerpt
+    }
+}
+
+/// An async sequence of newline-delimited lines decoded from a byte
+/// stream, preserving **empty lines**.
+///
+/// `URLSession.AsyncBytes.lines` (`AsyncLineSequence`) silently drops
+/// blank lines. SSE uses the blank line as the event-boundary delimiter,
+/// so `AsyncLineSequence` collapses adjacent events into one record
+/// (`data: a\n\ndata: b\n\n` would yield a single `"a\nb"` event).
+/// `SSELineSequence` splits on `\n` and yields every segment — including
+/// empty ones — stripping an optional trailing `\r` for CRLF streams,
+/// so the parser sees the event boundaries verbatim.
+nonisolated struct SSELineSequence: AsyncSequence, Sendable {
+    typealias Element = String
+
+    let base: URLSession.AsyncBytes
+
+    func makeAsyncIterator() -> AsyncIterator {
+        AsyncIterator(base: base.makeAsyncIterator())
+    }
+
+    struct AsyncIterator: AsyncIteratorProtocol {
+        var base: URLSession.AsyncBytes.AsyncIterator
+
+        init(base: URLSession.AsyncBytes.AsyncIterator) {
+            self.base = base
+        }
+        private var buffer: [UInt8] = []
+        private var finished = false
+
+        mutating func next() async throws -> String? {
+            if finished { return nil }
+
+            while let byte = try await base.next() {
+                if byte == 0x0A { // \n
+                    return Self.makeLine(from: &buffer)
+                }
+                buffer.append(byte)
+            }
+
+            // End of stream: emit any trailing partial line (if the
+            // stream did not end with a newline), then finish.
+            finished = true
+            if buffer.isEmpty {
+                return nil
+            }
+            return Self.makeLine(from: &buffer)
+        }
+
+        private static func makeLine(from buffer: inout [UInt8]) -> String {
+            // Strip a single trailing CR for CRLF line endings.
+            if buffer.last == 0x0D { // \r
+                buffer.removeLast()
+            }
+            // `String(decoding:as:)` never fails (substitutes U+FFFD for
+            // invalid bytes); the failable Data initializer the lint rule
+            // prefers is inappropriate for a streaming line decoder that
+            // must not drop a line on a transient bad byte.
+            // swiftlint:disable:next optional_data_string_conversion
+            let line = String(decoding: buffer, as: UTF8.self)
+            buffer.removeAll(keepingCapacity: true)
+            return line
+        }
     }
 }
 
