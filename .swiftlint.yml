@@ -79,6 +79,13 @@ type_body_length:
   warning: 400
   error: 600
 
+# Swift Testing `@Test` functions carry long descriptive names and each
+# test case adds its own MARK section plus doc-comment. The default 400-line
+# warning fires on well-organised test suites before a split is warranted.
+file_length:
+  warning: 600
+  error: 1000
+
 # Reducer `body` closures combine multiple `Reduce` blocks plus `.ifLet`
 # / `.forEach` chains. The default 40-line warning fires on routine flow
 # reducers.
