@@ -196,7 +196,11 @@ struct SSEParserTests {
     /// is cancelled via the stream's `onTermination` handler; the
     /// `CancellationError` path must not flush any accumulated state.
     @Test func cancellationDoesNotFlushPartialEvent() async {
-        let stream = SSEParser.parse(delayedPartial())
+        // Gate that fires once the partial (un-terminated) data line has
+        // been yielded into the parser, making cancellation timing
+        // deterministic instead of sleep-based.
+        let gate = PartialYieldedGate()
+        let stream = SSEParser.parse(partialThenHang(gate: gate))
 
         let count = await withTaskGroup(of: Int.self, returning: Int.self) { group in
             group.addTask {
@@ -208,8 +212,8 @@ struct SSEParserTests {
                 }
                 return count
             }
-            // Let parser accumulate partial data, then cancel.
-            try? await Task.sleep(nanoseconds: 80_000_000)
+            // Wait until the partial line is in the parser, then cancel.
+            await gate.waitUntilYielded()
             group.cancelAll()
             return await group.next() ?? 0
         }
@@ -286,13 +290,35 @@ private func throwingAfterPartialEvent() -> AsyncThrowingStream<String, Error> {
     }
 }
 
-/// Yields a line after a short delay, then never finishes — used to
-/// test mid-stream cancellation.
-private func delayedPartial() -> AsyncStream<String> {
+/// Awaitable one-shot gate that resolves once the partial line has been
+/// yielded into the parser. Lets the cancellation test be deterministic
+/// rather than relying on `Task.sleep` timing.
+private actor PartialYieldedGate {
+    private var yielded = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func signalYielded() {
+        guard !yielded else { return }
+        yielded = true
+        let pending = waiters
+        waiters = []
+        for waiter in pending { waiter.resume() }
+    }
+
+    func waitUntilYielded() async {
+        if yielded { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+}
+
+/// Yields a single partial (un-terminated) data line, signals the gate,
+/// then never finishes — used to test mid-stream cancellation without
+/// timing assumptions.
+private func partialThenHang(gate: PartialYieldedGate) -> AsyncStream<String> {
     AsyncStream { continuation in
         Task {
-            try? await Task.sleep(nanoseconds: 20_000_000) // 20 ms
             continuation.yield("data: partial")
+            await gate.signalYielded()
             // Never call continuation.finish() — cancellation must terminate.
         }
     }
