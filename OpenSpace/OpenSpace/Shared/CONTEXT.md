@@ -13,7 +13,7 @@ implementation are reused across multiple features or Providers.
 implementations before vendor-specific decoding. Transport stays vendor-neutral.
 
 **SSE parser.** The internal server-sent events parser used by Provider Client
-Live implementations to turn streaming HTTP bytes into `SSERecord` values. The
+Live implementations to turn streaming HTTP bytes into `SSEEvent` values. The
 canonical parser file is
 `OpenSpace/OpenSpace/Shared/Networking/SSEParser.swift`.
 
