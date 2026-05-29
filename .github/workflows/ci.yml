@@ -29,14 +29,13 @@ concurrency:
 env:
   XCODE_PROJECT: OpenSpace/OpenSpace.xcodeproj
   XCODE_SCHEME: OpenSpace
-  # iPhone 16 is present across every iOS simulator runtime that
-  # macos-15 ships (18.5 / 18.6 / 26.x). Dropping the explicit OS
-  # qualifier lets the runner image pick whichever runtime it carries
-  # without breaking CI when GitHub rolls the image forward. Minimum
-  # deployment target compliance is enforced at compile time by Swift
-  # availability checks, not by which simulator the binary runs on, so
-  # there is no value in pinning iOS 17.6 here.
-  XCODE_DESTINATION: 'platform=iOS Simulator,name=iPhone 16'
+  # Hardcoding a simulator name (e.g. "iPhone 16") breaks whenever
+  # GitHub rolls the macos-15 runner image and drops/renames that
+  # device. Instead each job resolves a concrete, available iPhone
+  # simulator UDID at runtime via `select-simulator` and exports it as
+  # XCODE_DESTINATION. Minimum deployment target compliance is enforced
+  # at compile time by Swift availability checks, not by which simulator
+  # runtime the binary runs on.
   DERIVED_DATA: build/DerivedData
 
 jobs:
@@ -57,6 +56,19 @@ jobs:
           restore-keys: |
             spm-${{ runner.os }}-build-
             spm-${{ runner.os }}-
+
+      - name: Select an available iOS Simulator
+        run: |
+          set -o pipefail
+          UDID=$(xcrun simctl list devices available --json \
+            | python3 -c 'import json,sys;ds=json.load(sys.stdin)["devices"];print(next((d["udid"] for rt in sorted(ds) if "iOS" in rt for d in ds[rt] if d.get("isAvailable") and "iPhone" in d["name"]), ""))')
+          if [ -z "$UDID" ]; then
+            echo "No available iPhone simulator found" >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Selected simulator UDID: $UDID"
+          echo "XCODE_DESTINATION=platform=iOS Simulator,id=$UDID" >> "$GITHUB_ENV"
 
       - name: xcodebuild build
         run: |
@@ -89,6 +101,19 @@ jobs:
           restore-keys: |
             spm-${{ runner.os }}-test-
             spm-${{ runner.os }}-
+
+      - name: Select an available iOS Simulator
+        run: |
+          set -o pipefail
+          UDID=$(xcrun simctl list devices available --json \
+            | python3 -c 'import json,sys;ds=json.load(sys.stdin)["devices"];print(next((d["udid"] for rt in sorted(ds) if "iOS" in rt for d in ds[rt] if d.get("isAvailable") and "iPhone" in d["name"]), ""))')
+          if [ -z "$UDID" ]; then
+            echo "No available iPhone simulator found" >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Selected simulator UDID: $UDID"
+          echo "XCODE_DESTINATION=platform=iOS Simulator,id=$UDID" >> "$GITHUB_ENV"
 
       - name: xcodebuild unit tests
         run: |
