@@ -155,6 +155,69 @@ struct SSEParserTests {
         #expect(events[0].data == "nospaces")
     }
 
+    // MARK: - Retry field is recognized but out of scope
+
+    /// `retry:` field does not fail parsing and is silently ignored.
+    @Test func retryFieldIsIgnored() async {
+        let lines = ["retry: 3000", "data: payload", ""]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == "payload")
+    }
+
+    // MARK: - Malformed / unknown lines
+
+    /// Unknown fields (not event/data/id/retry) are silently ignored.
+    @Test func unknownFieldsAreIgnored() async {
+        let lines = ["foo: bar", "data: payload", ""]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == "payload")
+    }
+
+    /// A line with no colon is treated as field-only with empty value.
+    @Test func lineWithNoColonIsFieldOnly() async {
+        let lines = ["nocolon", "data: payload", ""]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == "payload")
+    }
+
+    // MARK: - Cancellation does not flush partial event
+
+    /// Cancelling the consuming task mid-stream does not yield a partial
+    /// event. When the consumer is cancelled, the parser's internal task
+    /// is cancelled via the stream's `onTermination` handler; the
+    /// `CancellationError` path must not flush any accumulated state.
+    @Test func cancellationDoesNotFlushPartialEvent() async {
+        let stream = SSEParser.parse(delayedPartial())
+
+        let count = await withTaskGroup(of: Int.self, returning: Int.self) { group in
+            group.addTask {
+                var n = 0
+                do {
+                    for try await _ in stream { n += 1 }
+                } catch {
+                    // Cancellation — expected path.
+                }
+                return n
+            }
+            // Let parser accumulate partial data, then cancel.
+            try? await Task.sleep(nanoseconds: 80_000_000)
+            group.cancelAll()
+            return await group.next() ?? 0
+        }
+
+        // No event was emitted; cancellation prevented flushing.
+        #expect(count == 0)
+    }
+
     // MARK: - Record without data is discarded
 
     /// Event field alone with no data — discarded.
@@ -220,5 +283,17 @@ private func throwingAfterPartialEvent() -> AsyncThrowingStream<String, Error> {
     AsyncThrowingStream { continuation in
         continuation.yield("data: partial")
         continuation.finish(throwing: TestSSEError.upstreamFailed)
+    }
+}
+
+/// Yields a line after a short delay, then never finishes — used to
+/// test mid-stream cancellation.
+private func delayedPartial() -> AsyncStream<String> {
+    AsyncStream { continuation in
+        Task {
+            try? await Task.sleep(nanoseconds: 20_000_000) // 20 ms
+            continuation.yield("data: partial")
+            // Never call continuation.finish() — cancellation must terminate.
+        }
     }
 }
