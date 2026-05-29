@@ -35,7 +35,7 @@ struct SSETransportValidationTests {
         #expect(validated.statusCode == 201)
     }
 
-    /// 401 Unauthorized throws nonSuccessStatus.
+    /// 401 Unauthorized throws nonSuccessStatus with the status code.
     @Test func rejects401Unauthorized() throws {
         let response = HTTPURLResponse(
             url: URL(string: "https://example.com")!,
@@ -44,12 +44,20 @@ struct SSETransportValidationTests {
             headerFields: nil
         )!
 
-        #expect(throws: SSETransportError.nonSuccessStatus(status: 401)) {
+        do {
             try SSETransport.validateHTTPResponse(response)
+            Issue.record("Expected nonSuccessStatus")
+        } catch let error as SSETransportError {
+            guard case let .nonSuccessStatus(status, _, _, _) = error else {
+                Issue.record("Expected nonSuccessStatus, got \(error)")
+                return
+            }
+            #expect(status == 401)
         }
     }
 
-    /// 500 Internal Server Error throws nonSuccessStatus.
+    /// 500 Internal Server Error throws nonSuccessStatus with the
+    /// status code.
     @Test func rejects500ServerError() throws {
         let response = HTTPURLResponse(
             url: URL(string: "https://example.com")!,
@@ -58,8 +66,15 @@ struct SSETransportValidationTests {
             headerFields: nil
         )!
 
-        #expect(throws: SSETransportError.nonSuccessStatus(status: 500)) {
+        do {
             try SSETransport.validateHTTPResponse(response)
+            Issue.record("Expected nonSuccessStatus")
+        } catch let error as SSETransportError {
+            guard case let .nonSuccessStatus(status, _, _, _) = error else {
+                Issue.record("Expected nonSuccessStatus, got \(error)")
+                return
+            }
+            #expect(status == 500)
         }
     }
 
@@ -74,6 +89,195 @@ struct SSETransportValidationTests {
 
         #expect(throws: SSETransportError.invalidResponse) {
             try SSETransport.validateHTTPResponse(response)
+        }
+    }
+
+    // MARK: - Host extraction
+
+    /// Extracts the host from a valid URL, stripping scheme, path, and
+    /// query parameters.
+    @Test func extractHostFromValidURL() throws {
+        let url = URL(
+            string: "https://api.example.com/v1/chat?key=secret"
+        )
+        #expect(SSETransport.extractHost(from: url) == "api.example.com")
+    }
+
+    /// Returns "unknown" when the URL is nil.
+    @Test func extractHostFromNilURL() {
+        #expect(SSETransport.extractHost(from: nil) == "unknown")
+    }
+
+    /// Extracts host from a URL with a port number.
+    @Test func extractHostIncludesPort() throws {
+        let url = URL(string: "https://localhost:8080/sse")
+        #expect(SSETransport.extractHost(from: url) == "localhost")
+    }
+
+    // MARK: - Non-success status error fields
+
+    /// The nonSuccessStatus error carries host, bodyExcerpt, and
+    /// retryAfter when the full openStream flow is exercised.
+    @Test func nonSuccessErrorCarriesDiagnosticContext() async {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [DiagnosticContextProtocol.self]
+        let session = URLSession(configuration: config)
+        let request = URLRequest(
+            url: URL(string: "https://api.example.com/v1/chat")!
+        )
+
+        do {
+            _ = try await SSETransport.openStream(
+                request,
+                session: session
+            )
+            Issue.record("Expected nonSuccessStatus error")
+        } catch let error as SSETransportError {
+            guard case let .nonSuccessStatus(
+                status,
+                host,
+                bodyExcerpt,
+                retryAfter
+            ) = error else {
+                Issue.record(
+                    "Expected nonSuccessStatus, got \(error)"
+                )
+                return
+            }
+            #expect(status == 401)
+            #expect(host == "api.example.com")
+            #expect(
+                bodyExcerpt
+                    == #"{"error": "invalid API key"}"#
+            )
+            #expect(retryAfter == "60")
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    /// Body excerpt is capped at bodyExcerptMaxLength.
+    @Test func bodyExcerptCappedAtMaxLength() async {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [OversizedBodyProtocol.self]
+        let session = URLSession(configuration: config)
+        let request = URLRequest(
+            url: URL(string: "https://api.example.com/v1/chat")!
+        )
+
+        do {
+            _ = try await SSETransport.openStream(
+                request,
+                session: session
+            )
+            Issue.record("Expected nonSuccessStatus error")
+        } catch let error as SSETransportError {
+            guard case let .nonSuccessStatus(_, _, bodyExcerpt, _) = error
+            else {
+                Issue.record(
+                    "Expected nonSuccessStatus, got \(error)"
+                )
+                return
+            }
+            #expect(
+                bodyExcerpt.count
+                    == SSETransport.bodyExcerptMaxLength
+            )
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    /// The host field in nonSuccessStatus contains only the host
+    /// component — no path, query, or fragment.
+    @Test func nonSuccessStatusHostIsHostOnly() async {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [HostOnlyProtocol.self]
+        let session = URLSession(configuration: config)
+        let request = URLRequest(
+            url: URL(
+                string: "https://api.example.com/v1/chat?api_key=secret"
+            )!
+        )
+
+        do {
+            _ = try await SSETransport.openStream(
+                request,
+                session: session
+            )
+            Issue.record("Expected nonSuccessStatus error")
+        } catch let error as SSETransportError {
+            guard case let .nonSuccessStatus(_, host, _, _) = error
+            else {
+                Issue.record(
+                    "Expected nonSuccessStatus, got \(error)"
+                )
+                return
+            }
+            #expect(host == "api.example.com")
+            // Host must not contain path or query.
+            #expect(!host.contains("/"))
+            #expect(!host.contains("api_key"))
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    /// Missing Retry-After header results in nil retryAfter.
+    @Test func nonSuccessStatusRetryAfterNilWhenMissing() async {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MissingRetryAfterProtocol.self]
+        let session = URLSession(configuration: config)
+        let request = URLRequest(
+            url: URL(string: "https://api.example.com/v1/chat")!
+        )
+
+        do {
+            _ = try await SSETransport.openStream(
+                request,
+                session: session
+            )
+            Issue.record("Expected nonSuccessStatus error")
+        } catch let error as SSETransportError {
+            guard case let .nonSuccessStatus(
+                status, _, _, retryAfter
+            ) = error else {
+                Issue.record(
+                    "Expected nonSuccessStatus, got \(error)"
+                )
+                return
+            }
+            #expect(status == 429)
+            #expect(retryAfter == nil)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    /// A successful openStream yields parsed SSE events through the
+    /// parser (happy-path regression).
+    @Test func openStreamSuccessYieldsParsedEvents() async {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [SuccessSSEProtocol.self]
+        let session = URLSession(configuration: config)
+        let request = URLRequest(
+            url: URL(string: "https://api.example.com/v1/chat")!
+        )
+
+        do {
+            let stream = try await SSETransport.openStream(
+                request,
+                session: session
+            )
+            var events: [SSEEvent] = []
+            for try await event in stream {
+                events.append(event)
+            }
+            #expect(events.count == 2)
+            #expect(events.first?.data == "hello")
+            #expect(events.dropFirst().first?.data == "world")
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
     }
 
@@ -156,166 +360,5 @@ struct SSETransportValidationTests {
 
         // Should not throw (case-insensitive).
         try SSETransport.validateContentType(response)
-    }
-}
-
-// MARK: - SSETransport parser integration tests
-
-/// Tests that verify the transport correctly pipes response lines
-/// through the shared SSEParser.
-@MainActor
-struct SSETransportParserIntegrationTests {
-
-    /// Parser correctly processes multiple events from lines.
-    @Test func parserProcessesMultipleEvents() async {
-        let lines = [
-            "data: hello world",
-            "",
-            "data: second event",
-            "",
-        ]
-
-        let stream = SSEParser.parse(testAsyncLines(lines))
-        let events = await collectSSEEvents(stream)
-
-        #expect(events.count == 2)
-        #expect(events[0].data == "hello world")
-        #expect(events[1].data == "second event")
-    }
-
-    /// Parser handles empty input.
-    @Test func parserHandlesEmptyInput() async {
-        let lines: [String] = []
-
-        let stream = SSEParser.parse(testAsyncLines(lines))
-        let events = await collectSSEEvents(stream)
-
-        #expect(events.isEmpty)
-    }
-
-    /// Parser handles events with names and IDs.
-    @Test func parserHandlesNamedEvents() async {
-        let lines = [
-            "event: message",
-            "data: first",
-            "",
-            "id: 42",
-            "data: second",
-            "",
-            "data: third",
-            "",
-        ]
-
-        let stream = SSEParser.parse(testAsyncLines(lines))
-        let events = await collectSSEEvents(stream)
-
-        #expect(events.count == 3)
-        #expect(events[0].event == "message")
-        #expect(events[0].data == "first")
-        #expect(events[1].id == "42")
-        #expect(events[1].data == "second")
-        #expect(events[2].data == "third")
-    }
-
-    // MARK: - Helpers
-
-    private func testAsyncLines(_ lines: [String]) -> AsyncStream<String> {
-        AsyncStream { continuation in
-            for line in lines {
-                continuation.yield(line)
-            }
-            continuation.finish()
-        }
-    }
-
-    private func collectSSEEvents(
-        _ stream: AsyncThrowingStream<SSEEvent, Error>
-    ) async -> [SSEEvent] {
-        var result: [SSEEvent] = []
-        do {
-            for try await event in stream {
-                result.append(event)
-            }
-        } catch {
-            Issue.record("Unexpected parser error: \(error)")
-        }
-        return result
-    }
-}
-
-// MARK: - SSETransport cancellation test
-
-/// Tests that verify cancellation behavior.
-@MainActor
-struct SSETransportCancellationTests {
-
-    /// Cancelling the consuming task stops the stream without
-    /// yielding a half-event.
-    @Test func cancellationStopsStreamWithoutHalfEvent() async {
-        // Use the same pattern as SSEParserTests for cancellation.
-        let gate = PartialYieldedGate()
-        let stream = SSEParser.parse(partialThenHang(gate: gate))
-
-        let count = await withTaskGroup(
-            of: Int.self,
-            returning: Int.self
-        ) { group in
-            group.addTask {
-                var count = 0
-                do {
-                    for try await _ in stream {
-                        count += 1
-                    }
-                } catch {
-                    // Cancellation — expected path.
-                }
-                return count
-            }
-
-            // Wait until the partial line is in the parser, then cancel.
-            await gate.waitUntilYielded()
-            group.cancelAll()
-            return await group.next() ?? 0
-        }
-
-        // No complete events should have been emitted.
-        #expect(count == 0)
-    }
-
-    // MARK: - Helpers
-
-    private func partialThenHang(
-        gate: PartialYieldedGate
-    ) -> AsyncStream<String> {
-        AsyncStream { continuation in
-            Task {
-                continuation.yield("data: partial")
-                await gate.signalYielded()
-                // Never call continuation.finish() — cancellation must terminate.
-            }
-        }
-    }
-}
-
-// MARK: - Cancellation gate
-
-/// Awaitable one-shot gate that resolves once the partial line has been
-/// yielded into the parser. Lets the cancellation test be deterministic
-/// rather than relying on `Task.sleep` timing.
-private actor PartialYieldedGate {
-    private var yielded = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
-
-    func signalYielded() {
-        guard !yielded else { return }
-        yielded = true
-        let pending = waiters
-        waiters = []
-        for waiter in pending { waiter.resume() }
-    }
-
-    func waitUntilYielded() async {
-        if yielded { return }
-        await withCheckedContinuation { waiters.append($0) }
     }
 }

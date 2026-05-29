@@ -126,6 +126,7 @@ jobs:
             -skip-testing:OpenSpaceUITests \
             -configuration Debug \
             -derivedDataPath "$DERIVED_DATA" \
+            -enableCodeCoverage NO \
             -skipMacroValidation \
             -skipPackagePluginValidation \
             CODE_SIGN_IDENTITY="" \
