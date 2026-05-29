@@ -1,5 +1,26 @@
 import Foundation
 
+/// Errors emitted by ``SSEParser`` when it encounters an unrecoverable
+/// parse violation mid-stream.
+///
+/// Each case is typed so Provider Client Live implementations can
+/// switch over parse failures for structured mapping to
+/// `ProviderError.decoding` without depending on string parsing.
+///
+/// `SSEParseError` is `Sendable` under Swift 6 complete strict
+/// concurrency.
+enum SSEParseError: Error, Sendable, Equatable {
+
+    /// The accumulated size of `event:`, `data:`, and `id:` fields
+    /// within a single SSE record exceeded ``SSEParser/maxRecordSize``
+    /// UTF-8 bytes.
+    ///
+    /// The parser terminates the stream without yielding a partial
+    /// event. The associated value is the documented maximum record
+    /// size in bytes.
+    case recordSizeExceeded(maxSize: Int)
+}
+
 /// A pure, vendor-neutral SSE line parser that turns an async sequence
 /// of wire-format text lines into parsed `SSEEvent` values.
 ///
@@ -17,6 +38,20 @@ import Foundation
 /// preserving multi-line payloads verbatim.
 enum SSEParser {
 
+    /// Maximum number of UTF-8 bytes allowed across accumulated
+    /// `event:`, `data:`, and `id:` fields within a single SSE record.
+    ///
+    /// When the accumulated size exceeds this cap, the parser throws
+    /// ``SSEParseError/recordSizeExceeded(maxSize:)`` without yielding
+    /// a partial event. This guard protects against pathological or
+    /// malicious servers delivering unbounded record payloads.
+    ///
+    /// The value is chosen to comfortably fit any realistic
+    /// OpenAI-compatible or Anthropic-compatible streaming record
+    /// (typical records are < 1 KB) while preventing multi-megabyte
+    /// memory spikes from a misbehaving server.
+    static let maxRecordSize: Int = 1 << 20 // 1 MiB
+
     /// Parses an async sequence of SSE lines into a stream of events.
     ///
     /// - Parameter lines: An async sequence of lines without trailing
@@ -33,6 +68,7 @@ enum SSEParser {
                 var event: String?
                 var dataLines: [String] = []
                 var id: String?
+                var recordSize: Int = 0
 
                 do {
                     for try await line in lines {
@@ -48,11 +84,24 @@ enum SSEParser {
                             event = nil
                             dataLines = []
                             id = nil
+                            recordSize = 0
                             continue
                         }
 
                         // Comment line → ignore (keep-alives).
                         if line.hasPrefix(":") { continue }
+
+                        // Enforce per-record size cap before splitting
+                        // the line into field/value strings. The
+                        // accumulated size is measured in UTF-8 bytes and
+                        // includes the field name, colon, and value for
+                        // each line in the record.
+                        recordSize += line.utf8.count
+                        if recordSize > Self.maxRecordSize {
+                            throw SSEParseError.recordSizeExceeded(
+                                maxSize: Self.maxRecordSize
+                            )
+                        }
 
                         let (field, value) = splitLine(line)
 
