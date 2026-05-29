@@ -18,6 +18,12 @@ import Foundation
 /// partial records.
 enum SSETransport {
 
+    /// Maximum number of characters captured from a non-2xx response
+    /// body for diagnostic excerpts. Prevents unbounded memory use
+    /// when the server returns a large error payload (e.g., an HTML
+    /// error page).
+    static let bodyExcerptMaxLength = 2048
+
     /// Opens a streaming SSE connection and yields parsed events.
     ///
     /// This method:
