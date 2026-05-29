@@ -8,10 +8,11 @@ import Foundation
 /// and pipes response lines through the shared `SSEParser` to produce
 /// parsed events.
 ///
-/// The transport handles only the happy path: 2xx responses with
-/// `text/event-stream` content type. It contains no vendor-specific
-/// payload decoding or `ProviderError` mapping — those responsibilities
-/// belong to the Provider Live implementations.
+/// The transport contains no vendor-specific payload decoding or
+/// `ProviderError` mapping — those responsibilities belong to the
+/// Provider Live implementations. Transport errors are typed via
+/// ``SSETransportError`` so callers can switch over failures for
+/// structured mapping and diagnostics.
 ///
 /// Cancellation: cancelling the consuming `Task` cancels the underlying
 /// `URLSession` data task and stops yielding events without emitting
@@ -29,9 +30,11 @@ enum SSETransport {
     /// This method:
     /// 1. Opens the request via `URLSession.bytes(for:)`.
     /// 2. Validates the HTTP response status code is 2xx.
-    /// 3. Validates the `Content-Type` header contains `text/event-stream`.
-    /// 4. Feeds response lines through `SSEParser.parse(_:)`.
-    /// 5. Yields parsed `SSEEvent` values.
+    /// 3. For non-2xx responses, reads a body excerpt for diagnostics
+    ///    and throws ``SSETransportError/nonSuccessStatus``.
+    /// 4. Validates the `Content-Type` header contains `text/event-stream`.
+    /// 5. Feeds response lines through `SSEParser.parse(_:)`.
+    /// 6. Yields parsed `SSEEvent` values.
     ///
     /// - Parameters:
     ///   - request: The `URLRequest` to stream (typically a POST to a
@@ -44,32 +47,57 @@ enum SSETransport {
         _ request: URLRequest,
         session: URLSession = .shared
     ) async throws -> AsyncThrowingStream<SSEEvent, Error> {
-        let (bytes, response) = try await session.bytes(for: request)
+        let host = extractHost(from: request.url)
 
-        // Validate HTTP status code.
-        let httpResponse = try validateHTTPResponse(response)
+        do {
+            let (bytes, response) = try await session.bytes(for: request)
 
-        // Validate Content-Type.
-        try validateContentType(httpResponse)
+            // Validate HTTP status code and capture error context
+            // for non-2xx responses.
+            let httpResponse = try await validateResponse(
+                response,
+                host: host,
+                bodyLines: bytes.lines
+            )
 
-        // Feed lines through the shared parser.
-        return SSEParser.parse(bytes.lines)
+            // Validate Content-Type.
+            try validateContentType(httpResponse)
+
+            // Feed lines through the shared parser.
+            return SSEParser.parse(bytes.lines)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch let error as SSETransportError {
+            throw error
+        } catch {
+            throw SSETransportError.transportFailure(
+                error.localizedDescription
+            )
+        }
     }
 
     // MARK: - Validation helpers
 
     /// Validates that the response is an HTTP response with a 2xx status
-    /// code. Throws ``SSETransportError/nonSuccessStatus(status:)`` for
-    /// non-2xx responses.
-    static func validateHTTPResponse(
-        _ response: URLResponse
-    ) throws -> HTTPURLResponse {
+    /// code. For non-2xx responses, reads a body excerpt and throws
+    /// ``SSETransportError/nonSuccessStatus`` with diagnostic context.
+    static func validateResponse(
+        _ response: URLResponse,
+        host: String,
+        bodyLines: AsyncLineSequence<URLSession.AsyncBytes>
+    ) async throws -> HTTPURLResponse {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw SSETransportError.invalidResponse
         }
         guard (200...299).contains(httpResponse.statusCode) else {
+            let bodyExcerpt = await readBodyExcerpt(from: bodyLines)
             throw SSETransportError.nonSuccessStatus(
-                status: httpResponse.statusCode
+                status: httpResponse.statusCode,
+                host: host,
+                bodyExcerpt: bodyExcerpt,
+                retryAfter: httpResponse.value(
+                    forHTTPHeaderField: "Retry-After"
+                )
             )
         }
         return httpResponse
@@ -107,18 +135,111 @@ enum SSETransport {
             throw SSETransportError.unexpectedContentType(contentType)
         }
     }
+
+    // MARK: - Backward-compatible validation
+
+    /// Validates that the response is an HTTP response with a 2xx status
+    /// code. Throws ``SSETransportError/nonSuccessStatus`` for non-2xx
+    /// responses.
+    ///
+    /// This is a synchronous convenience for testing and lightweight
+    /// validation. Use ``validateResponse(_:host:bodyLines:)`` in
+    /// ``openStream(_:session:)`` for full error context including
+    /// body excerpt and host.
+    static func validateHTTPResponse(
+        _ response: URLResponse
+    ) throws -> HTTPURLResponse {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw SSETransportError.invalidResponse
+        }
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw SSETransportError.nonSuccessStatus(
+                status: httpResponse.statusCode,
+                host: "",
+                bodyExcerpt: "",
+                retryAfter: nil
+            )
+        }
+        return httpResponse
+    }
+
+    // MARK: - Diagnostic helpers
+
+    /// Extracts the host component from a URL, stripping the scheme,
+    /// path, query, and fragment. Returns `"unknown"` if the URL is
+    /// nil or has no host.
+    ///
+    /// This prevents leaking full URLs (which may contain API keys
+    /// in query parameters) into error payloads.
+    static func extractHost(from url: URL?) -> String {
+        url?.host ?? "unknown"
+    }
+
+    /// Reads up to ``bodyExcerptMaxLength`` characters from the body
+    /// lines of a non-2xx HTTP response.
+    ///
+    /// The excerpt is useful for diagnostics and error mapping
+    /// without consuming unbounded memory from large error payloads.
+    static func readBodyExcerpt(
+        from lines: AsyncLineSequence<URLSession.AsyncBytes>
+    ) async -> String {
+        var excerpt = ""
+        do {
+            for try await line in lines {
+                if !excerpt.isEmpty {
+                    excerpt.append("\n")
+                }
+                excerpt.append(line)
+                if excerpt.count >= bodyExcerptMaxLength {
+                    break
+                }
+            }
+        } catch {
+            // If reading the body fails (e.g., connection reset),
+            // return whatever excerpt was captured so far.
+        }
+        if excerpt.count > bodyExcerptMaxLength {
+            excerpt = String(excerpt.prefix(bodyExcerptMaxLength))
+        }
+        return excerpt
+    }
 }
 
 /// Errors thrown by ``SSETransport``.
+///
+/// Each case is typed so callers can switch over transport failures
+/// for structured error mapping without depending on string parsing.
+/// The SSE module does not map these errors into `ProviderError`
+/// directly — that responsibility belongs to the Provider Live layer.
 enum SSETransportError: Error, Sendable, Equatable {
 
     /// The response was not a valid HTTP response.
     case invalidResponse
 
     /// The HTTP status code was not in the 2xx range.
-    case nonSuccessStatus(status: Int)
+    ///
+    /// Carries diagnostic context for error mapping:
+    /// - `status`: the HTTP status code.
+    /// - `host`: the request URL's host, without path or query.
+    /// - `bodyExcerpt`: up to `bodyExcerptMaxLength` characters of
+    ///   the response body for diagnostics.
+    /// - `retryAfter`: the raw `Retry-After` header value, if present.
+    case nonSuccessStatus(
+        status: Int,
+        host: String,
+        bodyExcerpt: String,
+        retryAfter: String?
+    )
 
     /// The `Content-Type` header was present but not an expected SSE
     /// content type.
     case unexpectedContentType(String)
+
+    /// The underlying URLSession transport failed before a response
+    /// was received (e.g., DNS failure, connection refused, timeout).
+    case transportFailure(String)
+
+    /// The SSE stream was established but the parser encountered an
+    /// unrecoverable failure mid-stream.
+    case parserFailure
 }
