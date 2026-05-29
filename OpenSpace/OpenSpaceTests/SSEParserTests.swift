@@ -200,13 +200,13 @@ struct SSEParserTests {
 
         let count = await withTaskGroup(of: Int.self, returning: Int.self) { group in
             group.addTask {
-                var n = 0
+                var count = 0
                 do {
-                    for try await _ in stream { n += 1 }
+                    for try await _ in stream { count += 1 }
                 } catch {
                     // Cancellation — expected path.
                 }
-                return n
+                return count
             }
             // Let parser accumulate partial data, then cancel.
             try? await Task.sleep(nanoseconds: 80_000_000)
