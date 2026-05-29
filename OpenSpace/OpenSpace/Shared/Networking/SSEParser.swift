@@ -13,11 +13,11 @@ enum SSEParseError: Error, Sendable, Equatable {
 
     /// The accumulated size of `event:`, `data:`, and `id:` fields
     /// within a single SSE record exceeded ``SSEParser/maxRecordSize``
-    /// characters.
+    /// UTF-8 bytes.
     ///
     /// The parser terminates the stream without yielding a partial
     /// event. The associated value is the documented maximum record
-    /// size in characters.
+    /// size in bytes.
     case recordSizeExceeded(maxSize: Int)
 }
 
@@ -38,7 +38,7 @@ enum SSEParseError: Error, Sendable, Equatable {
 /// preserving multi-line payloads verbatim.
 enum SSEParser {
 
-    /// Maximum number of characters allowed across accumulated
+    /// Maximum number of UTF-8 bytes allowed across accumulated
     /// `event:`, `data:`, and `id:` fields within a single SSE record.
     ///
     /// When the accumulated size exceeds this cap, the parser throws
@@ -91,17 +91,19 @@ enum SSEParser {
                         // Comment line → ignore (keep-alives).
                         if line.hasPrefix(":") { continue }
 
-                        let (field, value) = splitLine(line)
-
-                        // Enforce per-record size cap. The accumulated
-                        // size includes the field name, colon, and value
-                        // for each line in the record.
-                        recordSize += line.count
+                        // Enforce per-record size cap before splitting
+                        // the line into field/value strings. The
+                        // accumulated size is measured in UTF-8 bytes and
+                        // includes the field name, colon, and value for
+                        // each line in the record.
+                        recordSize += line.utf8.count
                         if recordSize > Self.maxRecordSize {
                             throw SSEParseError.recordSizeExceeded(
                                 maxSize: Self.maxRecordSize
                             )
                         }
+
+                        let (field, value) = splitLine(line)
 
                         switch field {
                         case "event":

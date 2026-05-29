@@ -101,8 +101,8 @@ streaming bytes API — plus a small **internal SSE parser** at
   `OpenSpace/OpenSpace/Shared/Networking/SSEParser.swift`; place adjacent
   Provider streaming transport helpers under `OpenSpace/OpenSpace/Shared/Networking/`
   unless a later ADR says otherwise.
-- 2026-05-29: Enforced per-record size cap in `SSEParser` (1 MiB
-  `maxRecordSize`). Oversized records throw
+- 2026-05-29: Enforced per-record size cap in `SSEParser` (1 MiB of
+  UTF-8 bytes via `maxRecordSize`). Oversized records throw
   `SSEParseError.recordSizeExceeded(maxSize:)` without yielding a partial
   event. The typed error enables Provider Client Live implementations to
   map parse failures to `ProviderError.decoding` without depending on
