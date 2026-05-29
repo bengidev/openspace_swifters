@@ -234,6 +234,206 @@ struct SSEParserTests {
         #expect(events[0].data == "real")
     }
 
+    // MARK: - Record size cap
+
+    /// A record whose accumulated size is just under the cap parses
+    /// successfully.
+    @Test func recordJustUnderSizeLimitSucceeds() async {
+        let maxRecordSize = SSEParser.maxRecordSize
+        // Build a data line whose total characters (including "data: "
+        // prefix) is exactly maxRecordSize - 1.
+        let prefix = "data: "
+        let payloadCount = maxRecordSize - prefix.count - 1 // -1 for just-under
+        let payload = String(repeating: "x", count: max(0, payloadCount))
+        let line = prefix + payload
+
+        let events = await collect(SSEParser.parse(testAsync([line, ""])))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == payload)
+    }
+
+    /// A record whose accumulated size is exactly at the cap parses
+    /// successfully (the boundary is strict greater-than).
+    @Test func recordExactlyAtSizeLimitSucceeds() async {
+        let maxRecordSize = SSEParser.maxRecordSize
+        let prefix = "data: "
+        let payloadCount = maxRecordSize - prefix.count
+        let payload = String(repeating: "x", count: max(0, payloadCount))
+        let line = prefix + payload
+
+        let events = await collect(SSEParser.parse(testAsync([line, ""])))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == payload)
+    }
+
+    /// A record whose accumulated size exceeds the cap fails with
+    /// SSEParseError.recordSizeExceeded and does not yield a partial
+    /// event.
+    @Test func recordOverSizeLimitFails() async {
+        let maxRecordSize = SSEParser.maxRecordSize
+        let line = "data: " + String(repeating: "x", count: maxRecordSize)
+
+        var iterator = SSEParser.parse(testAsync([line, ""])).makeAsyncIterator()
+
+        do {
+            _ = try await iterator.next()
+            Issue.record("Expected recordSizeExceeded error")
+        } catch let error as SSEParseError {
+            #expect(error == .recordSizeExceeded(maxSize: maxRecordSize))
+        } catch {
+            Issue.record("Unexpected error type: \(error)")
+        }
+    }
+
+    /// Multi-line data payloads that stay within the cap still parse
+    /// correctly, with lines joined by newline.
+    @Test func multiLineDataWithinCapParsesNormally() async {
+        let lines = [
+            "data: first line",
+            "data: second line",
+            "data: third line",
+            "",
+        ]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == "first line\nsecond line\nthird line")
+    }
+
+    /// OpenAI [DONE] sentinel within the cap parses as a normal event.
+    @Test func doneSentinelWithinCapParsesNormally() async {
+        let lines = ["data: [DONE]", ""]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == "[DONE]")
+    }
+
+    /// A record that crosses the cap across multiple data lines fails
+    /// without yielding a partial event.
+    @Test func multiLineDataExceedingCapFails() async {
+        let maxRecordSize = SSEParser.maxRecordSize
+        // First line is under the limit; second line pushes over.
+        let firstLine = "data: " + String(repeating: "a", count: maxRecordSize / 2)
+        let secondLine = "data: " + String(repeating: "b", count: maxRecordSize)
+
+        var iterator = SSEParser.parse(
+            testAsync([firstLine, secondLine, ""])
+        ).makeAsyncIterator()
+
+        do {
+            _ = try await iterator.next()
+            Issue.record("Expected recordSizeExceeded error")
+        } catch let error as SSEParseError {
+            #expect(error == .recordSizeExceeded(maxSize: maxRecordSize))
+        } catch {
+            Issue.record("Unexpected error type: \(error)")
+        }
+    }
+
+    /// event: and id: fields contribute to the accumulated record size.
+    @Test func eventAndIdFieldsCountTowardSizeCap() async {
+        let maxRecordSize = SSEParser.maxRecordSize
+        // Build event: and id: lines that together are just under the cap,
+        // then a data: line that pushes over.
+        let eventLine = "event: " + String(repeating: "e", count: maxRecordSize / 3)
+        let idLine = "id: " + String(repeating: "i", count: maxRecordSize / 3)
+        let dataLine = "data: " + String(repeating: "d", count: maxRecordSize)
+
+        var iterator = SSEParser.parse(
+            testAsync([eventLine, idLine, dataLine, ""])
+        ).makeAsyncIterator()
+
+        do {
+            _ = try await iterator.next()
+            Issue.record("Expected recordSizeExceeded error")
+        } catch let error as SSEParseError {
+            #expect(error == .recordSizeExceeded(maxSize: maxRecordSize))
+        } catch {
+            Issue.record("Unexpected error type: \(error)")
+        }
+    }
+
+    /// After an oversized record fails, subsequent normal records in
+    /// the same stream are NOT yielded (the stream is terminated).
+    @Test func oversizedRecordTerminatesEntireStream() async {
+        let maxRecordSize = SSEParser.maxRecordSize
+        let oversize = "data: " + String(repeating: "x", count: maxRecordSize)
+        let normal = "data: ok"
+
+        var events: [SSEEvent] = []
+        var caughtError: SSEParseError?
+        let stream = SSEParser.parse(testAsync([oversize, "", normal, ""]))
+
+        do {
+            for try await event in stream {
+                events.append(event)
+            }
+        } catch let error as SSEParseError {
+            caughtError = error
+        } catch {
+            Issue.record("Unexpected error type: \(error)")
+        }
+
+        #expect(events.isEmpty)
+        #expect(caughtError == .recordSizeExceeded(maxSize: maxRecordSize))
+    }
+
+    /// Cancellation mid-stream does not flush a partial event even
+    /// when the record is within the size cap.
+    @Test func cancellationDoesNotFlushPartialEventWithinCap() async {
+        let gate = PartialYieldedGate()
+        let stream = SSEParser.parse(partialThenHang(gate: gate))
+
+        let count = await withTaskGroup(of: Int.self, returning: Int.self) { group in
+            group.addTask {
+                var count = 0
+                do {
+                    for try await _ in stream { count += 1 }
+                } catch {
+                    // Cancellation — expected path.
+                }
+                return count
+            }
+            await gate.waitUntilYielded()
+            group.cancelAll()
+            return await group.next() ?? 0
+        }
+
+        #expect(count == 0)
+    }
+
+    /// Upstream error propagates without flushing a partial event.
+    @Test func upstreamErrorStillPropagatesWithoutFlushing() async {
+        let stream = SSEParser.parse(throwingAfterPartialEvent())
+        var iterator = stream.makeAsyncIterator()
+
+        do {
+            _ = try await iterator.next()
+            Issue.record("Expected upstream failure")
+        } catch let error as TestSSEError {
+            #expect(error == .upstreamFailed)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    // MARK: - Sendable conformance (compile-time check)
+
+    /// Verify SSEParseError is Sendable — this is a compile-time
+    /// guarantee enforced by Swift 6 strict concurrency. The test
+    /// exists to document the contract; if the type ever loses
+    /// Sendable conformance this file will not compile.
+    @Test func parseErrorIsSendable() async {
+        let error: SSEParseError = .recordSizeExceeded(maxSize: 1024)
+        let _: any Sendable = error
+        #expect(error == .recordSizeExceeded(maxSize: 1024))
+    }
+
     // MARK: - Helpers
 
     @Test func upstreamErrorPropagatesWithoutFlushingPartialEvent() async {
