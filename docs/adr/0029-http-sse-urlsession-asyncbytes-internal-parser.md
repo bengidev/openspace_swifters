@@ -64,11 +64,11 @@ streaming bytes API — plus a small **internal SSE parser** at
 
 - A small, allocation-conscious type that consumes
   `URLSession.AsyncBytes` line-by-line, accumulates `event:`,
-  `data:`, and `id:` fields per record, and emits `SSERecord`
+  `data:`, and `id:` fields per record, and emits `SSEEvent`
   values (`event`, `data`, optional `id`) on each blank-line
   boundary.
 - It does not understand vendor payloads. Each Live Provider
-  decodes the `data` payload of an `SSERecord` into vendor-shaped
+  decodes the `data` payload of an `SSEEvent` into vendor-shaped
   JSON and maps that into the shared `StreamEvent` (ADR-0008).
 - It tolerates UTF-8 boundary splits across chunks (lines are
   buffered as bytes until LF), comment lines (`:` prefix; ignored),
@@ -88,7 +88,7 @@ streaming bytes API — plus a small **internal SSE parser** at
   generate its own; if the server stops sending data the
   `URLSession` resource timeout closes the request.
 - **No resume-from-id.** The parser captures `id:` values into the
-  `SSERecord` so a future ADR can wire `Last-Event-ID` resume into
+  `SSEEvent` so a future ADR can wire `Last-Event-ID` resume into
   it without changing the parser's public shape, but no Live
   Provider in v1 issues that header.
 
@@ -116,7 +116,7 @@ What gets easier:
   diff between OpenAI-compatible and Anthropic implementations
   is concentrated in JSON decoding and event mapping.
 - The parser is unit-tested independently of any vendor; vendor
-  Live tests reuse fixtures of `SSERecord` arrays.
+  Live tests reuse fixtures of `SSEEvent` arrays.
 
 What gets harder:
 

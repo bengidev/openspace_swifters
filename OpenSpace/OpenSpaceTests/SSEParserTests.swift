@@ -155,6 +155,73 @@ struct SSEParserTests {
         #expect(events[0].data == "nospaces")
     }
 
+    // MARK: - Retry field is recognized but out of scope
+
+    /// `retry:` field does not fail parsing and is silently ignored.
+    @Test func retryFieldIsIgnored() async {
+        let lines = ["retry: 3000", "data: payload", ""]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == "payload")
+    }
+
+    // MARK: - Malformed / unknown lines
+
+    /// Unknown fields (not event/data/id/retry) are silently ignored.
+    @Test func unknownFieldsAreIgnored() async {
+        let lines = ["foo: bar", "data: payload", ""]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == "payload")
+    }
+
+    /// A line with no colon is treated as field-only with empty value.
+    @Test func lineWithNoColonIsFieldOnly() async {
+        let lines = ["nocolon", "data: payload", ""]
+
+        let events = await collect(SSEParser.parse(testAsync(lines)))
+
+        #expect(events.count == 1)
+        #expect(events[0].data == "payload")
+    }
+
+    // MARK: - Cancellation does not flush partial event
+
+    /// Cancelling the consuming task mid-stream does not yield a partial
+    /// event. When the consumer is cancelled, the parser's internal task
+    /// is cancelled via the stream's `onTermination` handler; the
+    /// `CancellationError` path must not flush any accumulated state.
+    @Test func cancellationDoesNotFlushPartialEvent() async {
+        // Gate that fires once the partial (un-terminated) data line has
+        // been yielded into the parser, making cancellation timing
+        // deterministic instead of sleep-based.
+        let gate = PartialYieldedGate()
+        let stream = SSEParser.parse(partialThenHang(gate: gate))
+
+        let count = await withTaskGroup(of: Int.self, returning: Int.self) { group in
+            group.addTask {
+                var count = 0
+                do {
+                    for try await _ in stream { count += 1 }
+                } catch {
+                    // Cancellation — expected path.
+                }
+                return count
+            }
+            // Wait until the partial line is in the parser, then cancel.
+            await gate.waitUntilYielded()
+            group.cancelAll()
+            return await group.next() ?? 0
+        }
+
+        // No event was emitted; cancellation prevented flushing.
+        #expect(count == 0)
+    }
+
     // MARK: - Record without data is discarded
 
     /// Event field alone with no data — discarded.
@@ -220,5 +287,39 @@ private func throwingAfterPartialEvent() -> AsyncThrowingStream<String, Error> {
     AsyncThrowingStream { continuation in
         continuation.yield("data: partial")
         continuation.finish(throwing: TestSSEError.upstreamFailed)
+    }
+}
+
+/// Awaitable one-shot gate that resolves once the partial line has been
+/// yielded into the parser. Lets the cancellation test be deterministic
+/// rather than relying on `Task.sleep` timing.
+private actor PartialYieldedGate {
+    private var yielded = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func signalYielded() {
+        guard !yielded else { return }
+        yielded = true
+        let pending = waiters
+        waiters = []
+        for waiter in pending { waiter.resume() }
+    }
+
+    func waitUntilYielded() async {
+        if yielded { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+}
+
+/// Yields a single partial (un-terminated) data line, signals the gate,
+/// then never finishes — used to test mid-stream cancellation without
+/// timing assumptions.
+private func partialThenHang(gate: PartialYieldedGate) -> AsyncStream<String> {
+    AsyncStream { continuation in
+        Task {
+            continuation.yield("data: partial")
+            await gate.signalYielded()
+            // Never call continuation.finish() — cancellation must terminate.
+        }
     }
 }
